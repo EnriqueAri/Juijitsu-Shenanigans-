@@ -82,6 +82,10 @@ import * as THREE from 'https://unpkg.com/three@0.165.0/build/three.module.js';
 
 let username = "";
 
+let socket = null;
+let myId = null;
+const remotePlayers = {};
+
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x222222);
 
