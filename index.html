@@ -183,6 +183,35 @@ document.getElementById("playBtn")
 
     document.getElementById("playerName")
     .innerText = username;
+    socket = new WebSocket(
+    "wss://juijitsu-shenanigans-production.up.railway.app"
+);
+
+socket.onopen = () => {
+    console.log("Connected to server");
+};
+
+socket.onmessage = (event) => {
+
+    const data = JSON.parse(event.data);
+
+    if(data.type === "init"){
+        myId = data.id;
+        console.log("My ID:", myId);
+    }
+
+    if(data.type === "players"){
+        console.log("Players:", data.players);
+    }
+};
+
+socket.onerror = (err) => {
+    console.error("Socket Error", err);
+};
+
+socket.onclose = () => {
+    console.log("Disconnected");
+};
 };
 
 window.addEventListener("click",()=>{
