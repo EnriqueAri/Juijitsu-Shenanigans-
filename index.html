@@ -160,63 +160,28 @@ window.addEventListener(
 e=>keys[e.key.toLowerCase()] = false
 );
 
-console.log("Attempting connection...");
-alert("WebSocket code reached");
+document.getElementById("playBtn").onclick = () => {
 
-socket = new WebSocket(
-    "wss://juijitsu-shenanigans-production.up.railway.app"
-);
+    const value =
+    document.getElementById("username")
+    .value
+    .trim();
 
-socket.onopen = () => {
-    console.log("Connected to server");
-};
+    if(!value) return;
 
-socket.onmessage = (event) => {
+    username = value;
 
-    const data = JSON.parse(event.data);
+    document.getElementById("menu")
+    .style.display = "none";
 
-    if(data.type === "init"){
-        myId = data.id;
-        console.log("My ID:", myId);
-    }
+    document.getElementById("hud")
+    .style.display = "block";
 
-    if(data.type === "players"){
-        console.log("Players:", data.players);
-    }
-};
+    document.getElementById("crosshair")
+    .style.display = "block";
 
-socket.onerror = (err) => {
-    console.error("Socket Error", err);
-};
-
-socket.onclose = () => {
-    console.log("Disconnected");
-};
-socket.onopen = () => {
-    console.log("Connected to server");
-};
-
-socket.onmessage = (event) => {
-
-    const data = JSON.parse(event.data);
-
-    if(data.type === "init"){
-        myId = data.id;
-        console.log("My ID:", myId);
-    }
-
-    if(data.type === "players"){
-        console.log("Players:", data.players);
-    }
-};
-
-socket.onerror = (err) => {
-    console.error("Socket Error", err);
-};
-
-socket.onclose = () => {
-    console.log("Disconnected");
-};
+    document.getElementById("playerName")
+    .innerText = username;
 };
 
 window.addEventListener("click",()=>{
