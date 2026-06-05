@@ -184,6 +184,7 @@ document.getElementById("playBtn")
     document.getElementById("playerName")
     .innerText = username;
     socket = new WebSocket(
+        console.log("Attempting connection...");
     "wss://juijitsu-shenanigans-production.up.railway.app"
 );
 
