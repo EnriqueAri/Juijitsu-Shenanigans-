@@ -47,10 +47,10 @@ button,input{padding:10px;margin:6px;font-size:18px}
 </div>
 
 <div id="moves">
-1-4 = Abilities<br>
-G = Domain Expansion<br>
-Shift = Dash<br>
-Left Click = Punch
+Blue (1): <span id="blueCD">READY</span><br>
+Red (2): <span id="redCD">READY</span><br>
+Purple (3): <span id="purpleCD">READY</span><br>
+Domain (G): <span id="domainCD">READY</span>
 </div>
 
 <script type="module">
@@ -114,6 +114,12 @@ let grounded=true;
 let combo=0;
 
 const projectiles = [];
+ const cooldowns = {
+    blue: 0,
+    red: 0,
+    purple: 0,
+    domain: 0
+};
 
 function createBlue(){
 
@@ -215,18 +221,25 @@ addEventListener("keydown",e=>{
 
     if(fighter !== "Azure Sorcerer")
         return;
+if(e.key === "1" && cooldowns.blue <= 0){
+    createBlue();
+    cooldowns.blue = 180;
+}
 
-    if(e.key === "1")
-        createBlue();
+if(e.key === "2" && cooldowns.red <= 0){
+    createRed();
+    cooldowns.red = 300;
+}
 
-    if(e.key === "2")
-        createRed();
+if(e.key === "3" && cooldowns.purple <= 0){
+    createPurple();
+    cooldowns.purple = 600;
+}
 
-    if(e.key === "3")
-        createPurple();
-
-    if(e.key.toLowerCase() === "g")
-        domainExpansion();
+if(e.key.toLowerCase() === "g" && cooldowns.domain <= 0){
+    domainExpansion();
+    cooldowns.domain = 3600;
+}
 });
  addEventListener("keyup",e=>{
     keys[e.key.toLowerCase()] = false;
@@ -253,6 +266,17 @@ document.getElementById("startBtn").onclick=()=>{
  );
 
  socket.onmessage = (event)=>{
+  socket.onopen = ()=>{
+    console.log("Connected to multiplayer server");
+};
+
+socket.onerror = (err)=>{
+    console.error("WebSocket error", err);
+};
+
+socket.onclose = ()=>{
+    console.log("Disconnected from server");
+};
 
    const data = JSON.parse(event.data);
 
@@ -309,6 +333,10 @@ addEventListener("mousemove",e=>{
 
 function loop(){
  requestAnimationFrame(loop);
+ if(cooldowns.blue > 0) cooldowns.blue--;
+if(cooldowns.red > 0) cooldowns.red--;
+if(cooldowns.purple > 0) cooldowns.purple--;
+if(cooldowns.domain > 0) cooldowns.domain--;
 
  let speed=0.15;
 
@@ -375,6 +403,17 @@ if(socket && socket.readyState === 1){
    }));
 
 }
+ document.getElementById("blueCD").innerText =
+cooldowns.blue > 0 ? Math.ceil(cooldowns.blue/60)+"s" : "READY";
+
+document.getElementById("redCD").innerText =
+cooldowns.red > 0 ? Math.ceil(cooldowns.red/60)+"s" : "READY";
+
+document.getElementById("purpleCD").innerText =
+cooldowns.purple > 0 ? Math.ceil(cooldowns.purple/60)+"s" : "READY";
+
+document.getElementById("domainCD").innerText =
+cooldowns.domain > 0 ? Math.ceil(cooldowns.domain/60)+"s" : "READY";
 
 renderer.render(scene,camera);
 }
