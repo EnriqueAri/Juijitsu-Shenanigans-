@@ -110,21 +110,120 @@ let velY=0;
 let grounded=true;
 let combo=0;
 
+const projectiles = [];
+
+function createBlue(){
+
+    const blue = new THREE.Mesh(
+        new THREE.SphereGeometry(1,16,16),
+        new THREE.MeshStandardMaterial({
+            color:0x0000ff,
+            emissive:0x0000ff
+        })
+    );
+
+    blue.position.copy(player.position);
+    blue.position.y += 1.5;
+
+    scene.add(blue);
+
+    projectiles.push({
+        mesh: blue,
+        velocity: new THREE.Vector3(
+            -Math.sin(yaw),
+            0,
+            -Math.cos(yaw)
+        ).multiplyScalar(0.8)
+    });
+}
+
+function createRed(){
+
+    const red = new THREE.Mesh(
+        new THREE.SphereGeometry(1.2,16,16),
+        new THREE.MeshStandardMaterial({
+            color:0xff0000,
+            emissive:0xff0000
+        })
+    );
+
+    red.position.copy(player.position);
+    red.position.y += 1.5;
+
+    scene.add(red);
+
+    projectiles.push({
+        mesh: red,
+        velocity: new THREE.Vector3(
+            -Math.sin(yaw),
+            0,
+            -Math.cos(yaw)
+        ).multiplyScalar(1.2)
+    });
+}
+
+function createPurple(){
+
+    const purple = new THREE.Mesh(
+        new THREE.SphereGeometry(2,24,24),
+        new THREE.MeshStandardMaterial({
+            color:0xaa00ff,
+            emissive:0xaa00ff
+        })
+    );
+
+    purple.position.copy(player.position);
+    purple.position.y += 1.5;
+
+    scene.add(purple);
+
+    projectiles.push({
+        mesh: purple,
+        velocity: new THREE.Vector3(
+            -Math.sin(yaw),
+            0,
+            -Math.cos(yaw)
+        ).multiplyScalar(1.8)
+    });
+}
+
+function domainExpansion(){
+
+    const domain = new THREE.Mesh(
+        new THREE.SphereGeometry(40,32,32),
+        new THREE.MeshBasicMaterial({
+            color:0x5500ff,
+            wireframe:true
+        })
+    );
+
+    domain.position.copy(player.position);
+
+    scene.add(domain);
+
+    setTimeout(()=>{
+        scene.remove(domain);
+    },10000);
+}
+
 addEventListener("keydown",e=>{
- keys[e.key.toLowerCase()]=true;
 
- if(["1","2","3","4"].includes(e.key)){
-   alert("Ability "+e.key+" activated!");
- }
+    keys[e.key.toLowerCase()] = true;
 
- if(e.key.toLowerCase()==="g"){
-   scene.background=new THREE.Color(Math.random()*0xffffff);
-   alert("DOMAIN EXPANSION!");
- }
-});
+    if(fighter !== "Azure Sorcerer")
+        return;
 
-addEventListener("keyup",e=>{
- keys[e.key.toLowerCase()]=false;
+    if(e.key === "1")
+        createBlue();
+
+    if(e.key === "2")
+        createRed();
+
+    if(e.key === "3")
+        createPurple();
+
+    if(e.key.toLowerCase() === "g")
+        domainExpansion();
 });
 
 document.getElementById("playBtn").onclick=()=>{
