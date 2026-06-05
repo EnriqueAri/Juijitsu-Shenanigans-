@@ -160,35 +160,38 @@ window.addEventListener(
 e=>keys[e.key.toLowerCase()] = false
 );
 
-document.getElementById("playBtn")
-.onclick = () => {
+console.log("Attempting connection...");
+alert("WebSocket code reached");
 
-    const value =
-    document.getElementById("username")
-    .value
-    .trim();
-
-    if(!value) return;
-
-    username = value;
-
-    document.getElementById("menu")
-    .style.display = "none";
-
-    document.getElementById("hud")
-    .style.display = "block";
-
-    document.getElementById("crosshair")
-    .style.display = "block";
-
-    document.getElementById("playerName")
-    .innerText = username;
-    socket = new WebSocket(
-        console.log("Attempting connection...");
-    alert("WebSocket code reached");
+socket = new WebSocket(
     "wss://juijitsu-shenanigans-production.up.railway.app"
 );
 
+socket.onopen = () => {
+    console.log("Connected to server");
+};
+
+socket.onmessage = (event) => {
+
+    const data = JSON.parse(event.data);
+
+    if(data.type === "init"){
+        myId = data.id;
+        console.log("My ID:", myId);
+    }
+
+    if(data.type === "players"){
+        console.log("Players:", data.players);
+    }
+};
+
+socket.onerror = (err) => {
+    console.error("Socket Error", err);
+};
+
+socket.onclose = () => {
+    console.log("Disconnected");
+};
 socket.onopen = () => {
     console.log("Connected to server");
 };
