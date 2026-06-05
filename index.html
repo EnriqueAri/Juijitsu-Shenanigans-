@@ -278,23 +278,18 @@ function loop(){
  if(keys["a"])player.position.add(right.clone().multiplyScalar(-speed));
  if(keys["d"])player.position.add(right.clone().multiplyScalar(speed));
 
- if(keys[" "]&&grounded){
-  velY=0.35;
-  grounded=false;
- }
+if(keys[" "] && grounded){
+    velY = 0.35;
+    grounded = false;
+}
 
- velY-=0.02;
- player.position.y+=velY;
+velY -= 0.02;
+player.position.y += velY;
 
 if(player.position.y <= 1){
-
     player.position.y = 1;
-
     velY = 0;
-
     grounded = true;
-
-    keys[" "] = false;
 }
 
  camera.position.set(
