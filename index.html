@@ -384,6 +384,23 @@ for(let i=projectiles.length-1;i>=0;i--){
         projectiles[i].velocity
     );
 
+ for(const id in remotePlayers){
+
+    const distance =
+        projectiles[i].mesh.position.distanceTo(
+            remotePlayers[id].position
+        );
+
+    if(distance < 2){
+
+        console.log("Hit player:", id);
+
+        scene.remove(projectiles[i].mesh);
+        projectiles.splice(i,1);
+
+        break;
+    }
+}
     if(
         projectiles[i].mesh.position.length()
         > 300
