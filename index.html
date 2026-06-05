@@ -60,6 +60,9 @@ let hp=100;
 let username="";
 let fighter="";
 
+let socket = null;
+let myId = null;
+const remotePlayers = {};
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x202020);
 
@@ -244,6 +247,49 @@ document.getElementById("startBtn").onclick=()=>{
  document.getElementById("moves").style.display="block";
  document.getElementById("playerName").innerText=username;
  document.getElementById("charName").innerText=fighter;
+
+ socket = new WebSocket(
+   "wss://juijitsu-shenanigans-production.up.railway.app"
+ );
+
+ socket.onmessage = (event)=>{
+
+   const data = JSON.parse(event.data);
+
+   if(data.type === "init"){
+      myId = data.id;
+   }
+
+   if(data.type === "players"){
+
+      for(const id in data.players){
+
+         if(id === myId) continue;
+
+         const p = data.players[id];
+
+         if(!remotePlayers[id]){
+
+            const model = new THREE.Mesh(
+               new THREE.BoxGeometry(1,2,1),
+               new THREE.MeshStandardMaterial({
+                  color:0xff4444
+               })
+            );
+
+            scene.add(model);
+
+            remotePlayers[id] = model;
+         }
+
+         remotePlayers[id].position.set(
+            p.x,
+            p.y,
+            p.z
+         );
+      }
+   }
+ };
 };
 
 addEventListener("click",()=>{
@@ -318,7 +364,19 @@ for(let i=projectiles.length-1;i>=0;i--){
         projectiles.splice(i,1);
     }
 }
- renderer.render(scene,camera);
+if(socket && socket.readyState === 1){
+
+   socket.send(JSON.stringify({
+      type:"update",
+      username:username,
+      x:player.position.x,
+      y:player.position.y,
+      z:player.position.z
+   }));
+
+}
+
+renderer.render(scene,camera);
 }
 loop();
 </script>
