@@ -148,8 +148,6 @@ let dashCooldown = 0;
 let verticalVelocity = 0;
 let grounded = true;
 
-const keys = {};
-
 window.addEventListener(
 'keydown',
 e=>keys[e.key.toLowerCase()] = true
@@ -182,8 +180,7 @@ document.getElementById("playBtn").onclick = () => {
 
     document.getElementById("playerName")
     .innerText = username;
-
-window.addEventListener("click",()=>{
+};
 
     if(document.pointerLockElement
     !== document.body){
