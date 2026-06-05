@@ -301,7 +301,20 @@ function loop(){
  camera.lookAt(player.position);
 
  document.getElementById("hp").innerText=hp;
+for(let i=projectiles.length-1;i>=0;i--){
 
+    projectiles[i].mesh.position.add(
+        projectiles[i].velocity
+    );
+
+    if(
+        projectiles[i].mesh.position.length()
+        > 300
+    ){
+        scene.remove(projectiles[i].mesh);
+        projectiles.splice(i,1);
+    }
+}
  renderer.render(scene,camera);
 }
 loop();
