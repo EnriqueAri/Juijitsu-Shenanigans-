@@ -286,11 +286,16 @@ function loop(){
  velY-=0.02;
  player.position.y+=velY;
 
- if(player.position.y<=1){
-  player.position.y=1;
-  velY=0;
-  grounded=true;
- }
+if(player.position.y <= 1){
+
+    player.position.y = 1;
+
+    velY = 0;
+
+    grounded = true;
+
+    keys[" "] = false;
+}
 
  camera.position.set(
  player.position.x+Math.sin(yaw)*8,
