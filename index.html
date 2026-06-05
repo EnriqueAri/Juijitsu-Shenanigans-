@@ -2,202 +2,210 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>JJS</title>
+<title>JJS Prototype+</title>
 <style>
-html,body{
-    margin:0;
-    width:100%;
-    height:100%;
-    overflow:hidden;
-    background:black;
-    font-family:Arial,sans-serif;
+html,body{margin:0;height:100%;overflow:hidden;background:#111;font-family:Arial}
+#menu,#characterMenu{
+position:absolute;inset:0;display:flex;flex-direction:column;
+justify-content:center;align-items:center;color:white;background:#111;z-index:10;
 }
-#menu{
-    position:absolute;
-    inset:0;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
-    color:white;
-    background:black;
-    z-index:10;
-}
-#username,#playBtn{
-    padding:10px;
-    font-size:18px;
-    margin:8px;
-}
-#hud{
-    position:absolute;
-    top:10px;
-    left:10px;
-    color:white;
-    display:none;
-    z-index:5;
-}
+#characterMenu{display:none;}
+button,input{padding:10px;margin:6px;font-size:18px}
+#hud{position:absolute;top:10px;left:10px;color:white;display:none;z-index:5}
+#moves{position:absolute;bottom:10px;left:10px;color:white;display:none;z-index:5}
 </style>
 </head>
 <body>
 
 <div id="menu">
-    <h1>JJS</h1>
-    <input id="username" placeholder="Enter Username">
-    <button id="playBtn">Play</button>
+<h1>JJS Prototype+</h1>
+<input id="username" placeholder="Username">
+<button id="playBtn">Play</button>
+</div>
+
+<div id="characterMenu">
+<h2>Select Fighter</h2>
+<select id="fighter">
+<option>Azure Sorcerer</option>
+<option>Shadow Summoner</option>
+<option>Hammer Witch</option>
+<option>Lucky Brawler</option>
+<option>Crimson King</option>
+<option>Storm Monk</option>
+<option>Void Walker</option>
+<option>Iron Guardian</option>
+<option>Blaze Hunter</option>
+<option>Moon Duelist</option>
+</select>
+<button id="startBtn">Enter City</button>
 </div>
 
 <div id="hud">
-    <div id="playerName"></div>
-    <div>HP: 100</div>
+<div id="playerName"></div>
+<div>HP: <span id="hp">100</span></div>
+<div>Character: <span id="charName"></span></div>
+</div>
+
+<div id="moves">
+1-4 = Abilities<br>
+G = Domain Expansion<br>
+Shift = Dash<br>
+Left Click = Punch
 </div>
 
 <script type="module">
 import * as THREE from "https://unpkg.com/three@0.165.0/build/three.module.js";
 
-let username = "";
+let hp=100;
+let username="";
+let fighter="";
 
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x222222);
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x202020);
 
-const camera = new THREE.PerspectiveCamera(
-75,
-window.innerWidth/window.innerHeight,
-0.1,
-1000
-);
+const camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,1000);
 
-const renderer = new THREE.WebGLRenderer({antialias:true});
-renderer.setSize(window.innerWidth, window.innerHeight);
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight);
 document.body.appendChild(renderer.domElement);
 
-const light = new THREE.DirectionalLight(0xffffff,2);
-light.position.set(10,20,10);
+scene.add(new THREE.AmbientLight(0xffffff,0.8));
+
+const light=new THREE.DirectionalLight(0xffffff,2);
+light.position.set(20,30,20);
 scene.add(light);
 
-scene.add(new THREE.AmbientLight(0xffffff,0.5));
-
-const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(200,200),
-    new THREE.MeshStandardMaterial({color:0x444444})
+const ground=new THREE.Mesh(
+new THREE.PlaneGeometry(300,300),
+new THREE.MeshStandardMaterial({color:0x444444})
 );
-ground.rotation.x = -Math.PI/2;
+ground.rotation.x=-Math.PI/2;
 scene.add(ground);
 
-const player = new THREE.Mesh(
-    new THREE.BoxGeometry(1,2,1),
-    new THREE.MeshStandardMaterial({color:0x00aaff})
+const player=new THREE.Mesh(
+new THREE.BoxGeometry(1,2,1),
+new THREE.MeshStandardMaterial({color:0x00aaff})
 );
-player.position.y = 1;
+player.position.y=1;
 scene.add(player);
 
-for(let i=0;i<80;i++){
-    const h = Math.random()*25+5;
-
-    const building = new THREE.Mesh(
-        new THREE.BoxGeometry(5,h,5),
-        new THREE.MeshStandardMaterial({color:0x666666})
-    );
-
-    building.position.set(
-        (Math.random()-0.5)*180,
-        h/2,
-        (Math.random()-0.5)*180
-    );
-
-    scene.add(building);
+for(let x=-80;x<=80;x+=12){
+ for(let z=-80;z<=80;z+=12){
+   if(Math.random()<0.7){
+      const h=5+Math.random()*30;
+      const b=new THREE.Mesh(
+      new THREE.BoxGeometry(6,h,6),
+      new THREE.MeshStandardMaterial({color:0x666666})
+      );
+      b.position.set(x,h/2,z);
+      scene.add(b);
+   }
+ }
 }
 
-const keys = {};
-let dashCooldown = 0;
-let verticalVelocity = 0;
-let grounded = true;
-let yaw = 0;
-let pitch = 0;
+const keys={};
+let yaw=0;
+let dash=0;
+let velY=0;
+let grounded=true;
+let combo=0;
 
-window.addEventListener("keydown",e=>{
-    keys[e.key.toLowerCase()] = true;
+addEventListener("keydown",e=>{
+ keys[e.key.toLowerCase()]=true;
+
+ if(["1","2","3","4"].includes(e.key)){
+   alert("Ability "+e.key+" activated!");
+ }
+
+ if(e.key.toLowerCase()==="g"){
+   scene.background=new THREE.Color(Math.random()*0xffffff);
+   alert("DOMAIN EXPANSION!");
+ }
 });
 
-window.addEventListener("keyup",e=>{
-    keys[e.key.toLowerCase()] = false;
+addEventListener("keyup",e=>{
+ keys[e.key.toLowerCase()]=false;
 });
 
-document.getElementById("playBtn").onclick = () => {
-    const value = document.getElementById("username").value.trim();
-    if(!value) return;
-
-    username = value;
-
-    document.getElementById("playerName").innerText = username;
-    document.getElementById("menu").style.display = "none";
-    document.getElementById("hud").style.display = "block";
+document.getElementById("playBtn").onclick=()=>{
+ const n=document.getElementById("username").value.trim();
+ if(!n)return;
+ username=n;
+ document.getElementById("menu").style.display="none";
+ document.getElementById("characterMenu").style.display="flex";
 };
 
-window.addEventListener("click",()=>{
-    if(document.pointerLockElement !== document.body){
-        document.body.requestPointerLock();
-    }
+document.getElementById("startBtn").onclick=()=>{
+ fighter=document.getElementById("fighter").value;
+ document.getElementById("characterMenu").style.display="none";
+ document.getElementById("hud").style.display="block";
+ document.getElementById("moves").style.display="block";
+ document.getElementById("playerName").innerText=username;
+ document.getElementById("charName").innerText=fighter;
+};
+
+addEventListener("click",()=>{
+ if(document.pointerLockElement!==document.body){
+  document.body.requestPointerLock();
+ }else{
+  combo=(combo%4)+1;
+  console.log("Punch combo",combo);
+ }
 });
 
-document.addEventListener("mousemove",(e)=>{
-    if(document.pointerLockElement === document.body){
-        yaw -= e.movementX * 0.002;
-        pitch -= e.movementY * 0.002;
-        pitch = Math.max(-1.2, Math.min(1.2, pitch));
-    }
+addEventListener("mousemove",e=>{
+ if(document.pointerLockElement===document.body){
+  yaw-=e.movementX*0.002;
+ }
 });
 
-function animate(){
-    requestAnimationFrame(animate);
+function loop(){
+ requestAnimationFrame(loop);
 
-    let speed = 0.15;
+ let speed=0.15;
 
-    if(keys["shift"] && dashCooldown <= 0){
-        speed = 0.5;
-        dashCooldown = 20;
-    }
+ if(keys["shift"]&&dash<=0){
+   speed=0.5;
+   dash=20;
+ }
 
-    if(dashCooldown > 0) dashCooldown--;
+ if(dash>0)dash--;
 
-    const forward = new THREE.Vector3(
-        Math.sin(yaw),0,Math.cos(yaw)
-    );
+ const forward=new THREE.Vector3(Math.sin(yaw),0,Math.cos(yaw));
+ const right=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
 
-    const right = new THREE.Vector3(
-        Math.cos(yaw),0,-Math.sin(yaw)
-    );
+ if(keys["w"])player.position.add(forward.clone().multiplyScalar(-speed));
+ if(keys["s"])player.position.add(forward.clone().multiplyScalar(speed));
+ if(keys["a"])player.position.add(right.clone().multiplyScalar(-speed));
+ if(keys["d"])player.position.add(right.clone().multiplyScalar(speed));
 
-    if(keys["w"]) player.position.add(forward.clone().multiplyScalar(-speed));
-    if(keys["s"]) player.position.add(forward.clone().multiplyScalar(speed));
-    if(keys["a"]) player.position.add(right.clone().multiplyScalar(-speed));
-    if(keys["d"]) player.position.add(right.clone().multiplyScalar(speed));
+ if(keys[" "]&&grounded){
+  velY=0.35;
+  grounded=false;
+ }
 
-    if(keys[" "] && grounded){
-        verticalVelocity = 0.35;
-        grounded = false;
-    }
+ velY-=0.02;
+ player.position.y+=velY;
 
-    verticalVelocity -= 0.02;
-    player.position.y += verticalVelocity;
+ if(player.position.y<=1){
+  player.position.y=1;
+  velY=0;
+  grounded=true;
+ }
 
-    if(player.position.y <= 1){
-        player.position.y = 1;
-        verticalVelocity = 0;
-        grounded = true;
-    }
+ camera.position.set(
+ player.position.x+Math.sin(yaw)*8,
+ player.position.y+5,
+ player.position.z+Math.cos(yaw)*8
+ );
 
-    camera.position.set(
-        player.position.x + Math.sin(yaw)*8,
-        player.position.y + 5,
-        player.position.z + Math.cos(yaw)*8
-    );
+ camera.lookAt(player.position);
 
-    camera.lookAt(player.position);
+ document.getElementById("hp").innerText=hp;
 
-    renderer.render(scene,camera);
+ renderer.render(scene,camera);
 }
-
-animate();
+loop();
 </script>
 </body>
 </html>
