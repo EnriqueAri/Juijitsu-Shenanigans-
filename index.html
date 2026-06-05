@@ -225,6 +225,9 @@ addEventListener("keydown",e=>{
     if(e.key.toLowerCase() === "g")
         domainExpansion();
 });
+ addEventListener("keyup",e=>{
+    keys[e.key.toLowerCase()] = false;
+});
 
 document.getElementById("playBtn").onclick=()=>{
  const n=document.getElementById("username").value.trim();
@@ -281,8 +284,8 @@ function loop(){
 if(keys[" "] && grounded){
     velY = 0.35;
     grounded = false;
+    keys[" "] = false;
 }
-
 velY -= 0.02;
 player.position.y += velY;
 
