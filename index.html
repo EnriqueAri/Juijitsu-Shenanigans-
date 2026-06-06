@@ -318,7 +318,8 @@ socket.onclose = ()=>{
 
 addEventListener("click",()=>{
  if(document.pointerLockElement!==document.body){
-  document.body.requestPointerLock();
+document.body.requestPointerLock()
+.catch(()=>{});
  }else{
   combo=(combo%4)+1;
   console.log("Punch combo",combo);
