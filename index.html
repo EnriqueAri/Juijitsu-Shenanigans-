@@ -252,6 +252,7 @@ for(let x=-80;x<=80;x+=12){
 animate();
 
 }
+    function connectMultiplayer(){
     
 
 socket = new WebSocket(
@@ -565,6 +566,12 @@ cooldowns.domain>0
 
 
 
+if(socket && socket.readyState===1){
+
+    socket.send(JSON.stringify({
+
+        type:"update",
+
         username:username,
 
         x:player.position.x,
@@ -572,12 +579,8 @@ cooldowns.domain>0
         z:player.position.z
 
     }));
+
 }
-    if(socket && socket.readyState===1){
-
-socket.send(JSON.stringify({
-
-type:"update",
 
 
 renderer.render(scene,camera);
