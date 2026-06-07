@@ -388,14 +388,6 @@ for(let i=projectiles.length-1;i>=0;i--){
         projectiles[i].velocity
     );
 
-for(let i=projectiles.length-1;i>=0;i--){
-
-    if(!projectiles[i]) continue;
-
-    projectiles[i].mesh.position.add(
-        projectiles[i].velocity
-    );
-
     console.log("Projectile moving");
 
     for(const id in remotePlayers){
@@ -414,7 +406,7 @@ for(let i=projectiles.length-1;i>=0;i--){
             scene.remove(projectiles[i].mesh);
             projectiles.splice(i,1);
 
-            continue;
+            break;
         }
     }
 
@@ -427,31 +419,8 @@ for(let i=projectiles.length-1;i>=0;i--){
     }
 }
 
-    const distance =
-        projectiles[i].mesh.position.distanceTo(
-            remotePlayers[id].position
-        );
-  console.log("Distance:", distance);
 
- if(distance < 2){
 
-    console.log("Hit player:", id);
-
-    scene.remove(projectiles[i].mesh);
-    projectiles.splice(i,1);
-
-    continue;
-}
-}
-    if(
-        projectiles[i].mesh.position.length()
-        > 300
-    ){
-        scene.remove(projectiles[i].mesh);
-        projectiles.splice(i,1);
-    }
-}
-if(socket && socket.readyState === 1){
 
    socket.send(JSON.stringify({
       type:"update",
