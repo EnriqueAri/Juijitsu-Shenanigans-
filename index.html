@@ -110,6 +110,10 @@ let camera;
 let scene;
 let renderer;
 
+let socket = null;
+let myId = null;
+const remotePlayers = {};
+
 let yaw=0;
 let velY=0;
 let grounded=true;
@@ -122,6 +126,10 @@ domain:0
 };
 
 const projectiles=[];
+    let socket=null;
+let myId=null;
+
+const remotePlayers={};
 
 document.getElementById("playBtn").onclick=()=>{
 
@@ -214,6 +222,7 @@ color:0x00aaff
 player.position.y=1;
 
 scene.add(player);
+    connectMultiplayer();
 
 /* CITY BUILDINGS */
 
@@ -245,6 +254,71 @@ for(let x=-80;x<=80;x+=12){
 }
 
 animate();
+
+}
+    function connectMultiplayer(){
+
+socket = new WebSocket(
+"wss://juijitsu-shenanigans-production.up.railway.app"
+);
+
+socket.onopen=()=>{
+
+console.log("Connected");
+
+};
+
+socket.onmessage=(event)=>{
+
+const data=JSON.parse(event.data);
+
+if(data.type==="init"){
+
+myId=data.id;
+
+}
+
+if(data.type==="players"){
+
+for(const id in data.players){
+
+if(id===myId) continue;
+
+const p=data.players[id];
+
+if(!remotePlayers[id]){
+
+const model=
+new THREE.Mesh(
+new THREE.BoxGeometry(1,2,1),
+new THREE.MeshStandardMaterial({
+color:0xff4444
+})
+);
+
+scene.add(model);
+
+remotePlayers[id]=model;
+
+}
+
+remotePlayers[id].position.set(
+p.x,
+p.y,
+p.z
+);
+
+}
+
+}
+
+};
+
+socket.onerror=(err)=>{
+
+console.log(err);
+
+};
 
 }
 
@@ -468,8 +542,37 @@ cooldowns.domain>0
 ?Math.ceil(cooldowns.domain/60)+"s"
 :"READY";
 
-renderer.render(scene,camera);
+if(socket && socket.readyState === 1){
 
+    socket.send(JSON.stringify({
+
+        type:"update",
+
+        username:username,
+
+        x:player.position.x,
+        y:player.position.y,
+        z:player.position.z
+
+    }));
+}
+    if(socket && socket.readyState===1){
+
+socket.send(JSON.stringify({
+
+type:"update",
+
+username:username,
+
+x:player.position.x,
+y:player.position.y,
+z:player.position.z
+
+}));
+
+}
+
+renderer.render(scene,camera);
 }
 
 </script>
