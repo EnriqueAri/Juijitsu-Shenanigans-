@@ -215,6 +215,35 @@ player.position.y=1;
 
 scene.add(player);
 
+/* CITY BUILDINGS */
+
+for(let x=-80;x<=80;x+=12){
+
+    for(let z=-80;z<=80;z+=12){
+
+        if(Math.random()<0.7){
+
+            const h=5+Math.random()*30;
+
+            const building=
+            new THREE.Mesh(
+                new THREE.BoxGeometry(6,h,6),
+                new THREE.MeshStandardMaterial({
+                    color:0x666666
+                })
+            );
+
+            building.position.set(
+                x,
+                h/2,
+                z
+            );
+
+            scene.add(building);
+        }
+    }
+}
+
 animate();
 
 }
