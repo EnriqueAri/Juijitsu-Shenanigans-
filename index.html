@@ -1,64 +1,57 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>JJS v0.2 Lite</title>
-
-<style>
-html,body{
-margin:0;
-overflow:hidden;
-background:#111;
-font-family:Arial;
-}
-
-#menu{
-position:absolute;
-inset:0;
-display:flex;
-flex-direction:column;
-justify-content:center;
-align-items:center;
-background:#111;
-color:white;
-z-index:10;
-}
-
-button,input{
-padding:10px;
-margin:5px;
-font-size:18px;
-}
-</style>
-</head>
-
-<body>
-
 <div id="menu">
-<h1>JJS v0.2 Lite</h1>
+    <h1>JJS v0.2</h1>
 
-<input id="username" placeholder="Username">
+    <input id="username" placeholder="Username">
 
-<button id="playBtn">
-Play
-</button>
+    <button id="playBtn">
+        Play
+    </button>
 </div>
 
-<script>
+<div id="characterMenu" style="display:none">
+    <h2>Select Fighter</h2>
+
+    <select id="fighter">
+        <option>Azure Sorcerer</option>
+        <option>Shadow Summoner</option>
+        <option>Hammer Witch</option>
+    </select>
+
+    <button id="startBtn">
+        Enter City
+    </button>
+</div>
+let username="";
+let fighter="";
+
 document.getElementById("playBtn").onclick=()=>{
 
-const name =
-document.getElementById("username").value;
+    const name=
+    document.getElementById("username").value.trim();
 
-if(!name){
-alert("Enter username");
-return;
-}
+    if(!name){
+        alert("Enter username");
+        return;
+    }
 
-alert("Welcome " + name);
+    username=name;
 
+    document.getElementById("menu").style.display="none";
+
+    document.getElementById("characterMenu").style.display="flex";
 };
-</script>
 
-</body>
-</html>
+document.getElementById("startBtn").onclick=()=>{
+
+    fighter=
+    document.getElementById("fighter").value;
+
+    document.getElementById("characterMenu").style.display="none";
+
+    startGame();
+};
+function startGame(){
+
+    console.log("Starting game");
+
+}
