@@ -252,7 +252,7 @@ for(let x=-80;x<=80;x+=12){
 animate();
 
 }
-    function connectMultiplayer(){
+    
 
 socket = new WebSocket(
 "wss://juijitsu-shenanigans-production.up.railway.app"
@@ -271,6 +271,11 @@ const data=JSON.parse(event.data);
 if(data.type==="init"){
 
 myId=data.id;
+    if(data.type==="attack"){
+
+if(data.owner===myId) return;
+
+spawnRemoteAttack(data);
 
 }
 
@@ -342,6 +347,26 @@ velocity:new THREE.Vector3(
 -Math.cos(yaw)
 ).multiplyScalar(speed)
 });
+    if(socket && socket.readyState===1){
+
+socket.send(JSON.stringify({
+
+type:"attack",
+
+attack:
+color===0x0000ff ? "blue" :
+color===0xff0000 ? "red" :
+"purple",
+
+x:player.position.x,
+y:player.position.y,
+z:player.position.z,
+
+yaw:yaw
+
+}));
+
+}
 
 }
 
@@ -538,11 +563,7 @@ cooldowns.domain>0
 ?Math.ceil(cooldowns.domain/60)+"s"
 :"READY";
 
-if(socket && socket.readyState === 1){
 
-    socket.send(JSON.stringify({
-
-        type:"update",
 
         username:username,
 
