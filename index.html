@@ -2,18 +2,20 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>JJS v0.2</title>
+<title>Jujutsu Shenanigans</title>
 
 <style>
+
 html,body{
 margin:0;
 height:100%;
 overflow:hidden;
 background:#111;
-font-family:Arial;
+font-family:Arial,sans-serif;
 }
 
-#menu,#characterMenu{
+#menu,
+#characterMenu{
 position:absolute;
 inset:0;
 display:flex;
@@ -22,14 +24,16 @@ justify-content:center;
 align-items:center;
 background:#111;
 color:white;
-z-index:10;
+z-index:20;
 }
 
 #characterMenu{
 display:none;
 }
 
-input,button,select{
+input,
+button,
+select{
 padding:10px;
 margin:5px;
 font-size:18px;
@@ -41,7 +45,7 @@ top:10px;
 left:10px;
 color:white;
 display:none;
-z-index:5;
+z-index:10;
 }
 
 #moves{
@@ -50,20 +54,39 @@ bottom:10px;
 left:10px;
 color:white;
 display:none;
-z-index:5;
+z-index:10;
 }
+
+.healthBar{
+position:absolute;
+width:60px;
+height:8px;
+background:#500;
+border:1px solid black;
+}
+
+.healthFill{
+height:100%;
+width:100%;
+background:red;
+}
+
 </style>
 </head>
 <body>
 
 <div id="menu">
-<h1>JJS v0.2</h1>
 
-<input id="username" placeholder="Username">
+<h1>JJS Rebuild</h1>
+
+<input
+id="username"
+placeholder="Username">
 
 <button id="playBtn">
 Play
 </button>
+
 </div>
 
 <div id="characterMenu">
@@ -71,9 +94,11 @@ Play
 <h2>Select Fighter</h2>
 
 <select id="fighter">
+
 <option>Azure Sorcerer</option>
 <option>Shadow Summoner</option>
 <option>Hammer Witch</option>
+
 </select>
 
 <button id="startBtn">
@@ -83,21 +108,48 @@ Enter City
 </div>
 
 <div id="hud">
+
 <div id="playerName"></div>
-<div>HP: <span id="hp">100</span></div>
-<div>Character: <span id="charName"></span></div>
+
+<div>
+HP:
+<span id="hp">100</span>
+</div>
+
+<div>
+Character:
+<span id="charName"></span>
+</div>
+
 </div>
 
 <div id="moves">
-Blue (1): <span id="blueCD">READY</span><br>
-Red (2): <span id="redCD">READY</span><br>
-Purple (3): <span id="purpleCD">READY</span><br>
-Domain (G): <span id="domainCD">READY</span>
+
+Blue (1):
+<span id="blueCD">READY</span>
+<br>
+
+Red (2):
+<span id="redCD">READY</span>
+<br>
+
+Purple (3):
+<span id="purpleCD">READY</span>
+<br>
+
+Domain (G):
+<span id="domainCD">READY</span>
+
 </div>
 
 <script type="module">
 
-import * as THREE from "https://unpkg.com/three@0.165.0/build/three.module.js";
+import * as THREE from
+"https://unpkg.com/three@0.165.0/build/three.module.js";
+
+/* ==========================
+   PLAYER DATA
+========================== */
 
 let username="";
 let fighter="";
@@ -105,18 +157,19 @@ let hp=100;
 
 const keys={};
 
-let player;
-let camera;
 let scene;
+let camera;
 let renderer;
 
-let socket = null;
-let myId = null;
-const remotePlayers = {};
+let player;
 
 let yaw=0;
 let velY=0;
 let grounded=true;
+
+let myId=null;
+
+const remotePlayers={};
 
 const cooldowns={
 blue:0,
@@ -127,135 +180,16 @@ domain:0
 
 const projectiles=[];
 
-document.getElementById("playBtn").onclick=()=>{
+/* ==========================
+   MULTIPLAYER
+========================== */
 
-const name=
-document.getElementById("username").value.trim();
+let socket=null;
 
-if(!name){
-alert("Enter username");
-return;
-}
+function connectMultiplayer(){
 
-username=name;
-
-document.getElementById("menu").style.display="none";
-document.getElementById("characterMenu").style.display="flex";
-
-};
-
-document.getElementById("startBtn").onclick=()=>{
-
-fighter=
-document.getElementById("fighter").value;
-
-document.getElementById("characterMenu").style.display="none";
-
-document.getElementById("hud").style.display="block";
-document.getElementById("moves").style.display="block";
-
-document.getElementById("playerName").innerText=username;
-document.getElementById("charName").innerText=fighter;
-
-startGame();
-
-};
-
-function startGame(){
-
-scene=new THREE.Scene();
-scene.background=new THREE.Color(0x202020);
-
-camera=
-new THREE.PerspectiveCamera(
-75,
-window.innerWidth/window.innerHeight,
-0.1,
-1000
-);
-
-renderer=
-new THREE.WebGLRenderer({antialias:true});
-
-renderer.setSize(
-window.innerWidth,
-window.innerHeight
-);
-
-document.body.appendChild(renderer.domElement);
-
-scene.add(
-new THREE.AmbientLight(0xffffff,0.8)
-);
-
-const light=
-new THREE.DirectionalLight(0xffffff,2);
-
-light.position.set(20,30,20);
-
-scene.add(light);
-
-const ground=
-new THREE.Mesh(
-new THREE.PlaneGeometry(300,300),
-new THREE.MeshStandardMaterial({
-color:0x444444
-})
-);
-
-ground.rotation.x=-Math.PI/2;
-
-scene.add(ground);
-
-player=
-new THREE.Mesh(
-new THREE.BoxGeometry(1,2,1),
-new THREE.MeshStandardMaterial({
-color:0x00aaff
-})
-);
-
-player.position.y=1;
-
-scene.add(player);
-    connectMultiplayer();
-
-/* CITY BUILDINGS */
-
-for(let x=-80;x<=80;x+=12){
-
-    for(let z=-80;z<=80;z+=12){
-
-        if(Math.random()<0.7){
-
-            const h=5+Math.random()*30;
-
-            const building=
-            new THREE.Mesh(
-                new THREE.BoxGeometry(6,h,6),
-                new THREE.MeshStandardMaterial({
-                    color:0x666666
-                })
-            );
-
-            building.position.set(
-                x,
-                h/2,
-                z
-            );
-
-            scene.add(building);
-        }
-    }
-}
-
-animate();
-
-}
-    function connectMultiplayer(){
-    
-
-socket = new WebSocket(
+socket=
+new WebSocket(
 "wss://juijitsu-shenanigans-production.up.railway.app"
 );
 
@@ -267,16 +201,12 @@ console.log("Connected");
 
 socket.onmessage=(event)=>{
 
-const data=JSON.parse(event.data);
+const data=
+JSON.parse(event.data);
 
 if(data.type==="init"){
 
 myId=data.id;
-    if(data.type==="attack"){
-
-if(data.owner===myId) return;
-
-spawnRemoteAttack(data);
 
 }
 
@@ -284,27 +214,39 @@ if(data.type==="players"){
 
 for(const id in data.players){
 
-if(id===myId) continue;
+if(id===myId)
+continue;
 
-const p=data.players[id];
+const p=
+data.players[id];
 
 if(!remotePlayers[id]){
 
 const model=
 new THREE.Mesh(
-new THREE.BoxGeometry(1,2,1),
+new THREE.BoxGeometry(
+1,2,1
+),
 new THREE.MeshStandardMaterial({
 color:0xff4444
 })
 );
 
+model.position.y=1;
+
 scene.add(model);
 
-remotePlayers[id]=model;
+remotePlayers[id]={
+mesh:model,
+hp:100
+};
 
 }
 
-remotePlayers[id].position.set(
+remotePlayers[id]
+.mesh
+.position
+.set(
 p.x,
 p.y,
 p.z
@@ -318,149 +260,284 @@ p.z
 
 socket.onerror=(err)=>{
 
-console.log(err);
+console.error(err);
 
 };
 
 }
 
-function createProjectile(color,size,speed){
+/* ==========================
+   MENU
+========================== */
 
-const orb=
+document
+.getElementById("playBtn")
+.onclick=()=>{
+
+const name=
+document
+.getElementById("username")
+.value
+.trim();
+
+if(!name){
+
+alert("Enter username");
+return;
+
+}
+
+username=name;
+
+document
+.getElementById("menu")
+.style.display="none";
+
+document
+.getElementById("characterMenu")
+.style.display="flex";
+
+};
+
+document
+.getElementById("startBtn")
+.onclick=()=>{
+
+fighter=
+document
+.getElementById("fighter")
+.value;
+
+document
+.getElementById("characterMenu")
+.style.display="none";
+
+document
+.getElementById("hud")
+.style.display="block";
+
+document
+.getElementById("moves")
+.style.display="block";
+
+document
+.getElementById("playerName")
+.innerText=username;
+
+document
+.getElementById("charName")
+.innerText=fighter;
+
+startGame();
+
+};
+
+/* ==========================
+   GAME START
+========================== */
+
+function startGame(){
+
+scene=
+new THREE.Scene();
+
+scene.background=
+new THREE.Color(0x202020);
+
+camera=
+new THREE.PerspectiveCamera(
+75,
+window.innerWidth/
+window.innerHeight,
+0.1,
+1000
+);
+
+renderer=
+new THREE.WebGLRenderer({
+antialias:true
+});
+
+renderer.setSize(
+window.innerWidth,
+window.innerHeight
+);
+
+document.body.appendChild(
+renderer.domElement
+);
+
+scene.add(
+new THREE.AmbientLight(
+0xffffff,
+0.8
+)
+);
+
+const light=
+new THREE.DirectionalLight(
+0xffffff,
+2
+);
+
+light.position.set(
+20,
+30,
+20
+);
+
+scene.add(light);
+
+connectMultiplayer();
+player=
 new THREE.Mesh(
-new THREE.SphereGeometry(size,16,16),
+new THREE.BoxGeometry(
+1,
+2,
+1
+),
 new THREE.MeshStandardMaterial({
-color:color,
-emissive:color
+color:0x00aaff
 })
 );
 
-orb.position.copy(player.position);
-orb.position.y+=1.5;
+player.position.y=1;
 
-scene.add(orb);
+scene.add(player);
 
-projectiles.push({
-mesh:orb,
-velocity:new THREE.Vector3(
--Math.sin(yaw),
-0,
--Math.cos(yaw)
-).multiplyScalar(speed)
-});
-    if(socket && socket.readyState===1){
+/* CITY */
 
-socket.send(JSON.stringify({
+for(
+let x=-80;
+x<=80;
+x+=12
+){
 
-type:"attack",
+for(
+let z=-80;
+z<=80;
+z+=12
+){
 
-attack:
-color===0x0000ff ? "blue" :
-color===0xff0000 ? "red" :
-"purple",
+if(Math.random()<0.7){
 
-x:player.position.x,
-y:player.position.y,
-z:player.position.z,
+const h=
+5+
+Math.random()*30;
 
-yaw:yaw
-
-}));
-
-}
-
-}
-
-function createDomain(){
-
-const sphere=
+const building=
 new THREE.Mesh(
-new THREE.SphereGeometry(25,24,24),
-new THREE.MeshBasicMaterial({
-color:0xaa00ff,
-wireframe:true
+
+new THREE.BoxGeometry(
+6,
+h,
+6
+),
+
+new THREE.MeshStandardMaterial({
+color:0x666666
 })
+
 );
 
-sphere.position.copy(player.position);
+building.position.set(
+x,
+h/2,
+z
+);
 
-scene.add(sphere);
-
-setTimeout(()=>{
-scene.remove(sphere);
-},5000);
-
-}
-
-addEventListener("keydown",e=>{
-
-    console.log("KEY:", e.key);
-
-    keys[e.key.toLowerCase()] = true;
-
-if(fighter!=="Azure Sorcerer") return;
-
-if(e.key==="1"&&cooldowns.blue<=0){
-createProjectile(0x0000ff,1,0.8);
-cooldowns.blue=180;
-}
-
-if(e.key==="2"&&cooldowns.red<=0){
-createProjectile(0xff0000,1.2,1.2);
-cooldowns.red=300;
-}
-
-if(e.key==="3"&&cooldowns.purple<=0){
-createProjectile(0xaa00ff,2,1.8);
-cooldowns.purple=600;
-}
-
-if(e.key.toLowerCase()==="g"&&cooldowns.domain<=0){
-createDomain();
-cooldowns.domain=1800;
-}
-
-});
-
-addEventListener("keyup",(e)=>{
-keys[e.key.toLowerCase()]=false;
-});
-
-addEventListener("click",()=>{
-
-if(document.pointerLockElement!==document.body){
-
-document.body.requestPointerLock();
+scene.add(building);
 
 }
 
-});
-
-addEventListener("mousemove",(e)=>{
-
-if(document.pointerLockElement===document.body){
-
-yaw-=e.movementX*0.002;
+}
 
 }
 
-});
+animate();
+
+}
+
+/* ==========================
+   INPUT
+========================== */
+
+addEventListener(
+"keydown",
+(e)=>{
+
+keys[
+e.key.toLowerCase()
+]=true;
+
+}
+);
+
+addEventListener(
+"keyup",
+(e)=>{
+
+keys[
+e.key.toLowerCase()
+]=false;
+
+}
+);
+
+addEventListener(
+"click",
+()=>{
+
+if(
+document.pointerLockElement
+!==document.body
+){
+
+document.body
+.requestPointerLock();
+
+}
+
+}
+);
+
+addEventListener(
+"mousemove",
+(e)=>{
+
+if(
+document.pointerLockElement
+===document.body
+){
+
+yaw-=
+e.movementX
+*0.002;
+
+}
+
+}
+);
+
+/* ==========================
+   MAIN LOOP
+========================== */
 
 function animate(){
 
-requestAnimationFrame(animate);
+requestAnimationFrame(
+animate
+);
 
-if(!player) return;
-
-if(cooldowns.blue>0) cooldowns.blue--;
-if(cooldowns.red>0) cooldowns.red--;
-if(cooldowns.purple>0) cooldowns.purple--;
-if(cooldowns.domain>0) cooldowns.domain--;
+if(!player)
+return;
 
 let speed=0.15;
 
 if(keys["shift"]){
+
 speed=0.3;
+
 }
 
 const forward=
@@ -477,29 +554,58 @@ Math.cos(yaw),
 -Math.sin(yaw)
 );
 
-if(keys["w"])
+if(keys["w"]){
+
 player.position.add(
-forward.clone().multiplyScalar(-speed)
+forward.clone()
+.multiplyScalar(
+-speed
+)
 );
 
-if(keys["s"])
+}
+
+if(keys["s"]){
+
 player.position.add(
-forward.clone().multiplyScalar(speed)
+forward.clone()
+.multiplyScalar(
+speed
+)
 );
 
-if(keys["a"])
+}
+
+if(keys["a"]){
+
 player.position.add(
-right.clone().multiplyScalar(-speed)
+right.clone()
+.multiplyScalar(
+-speed
+)
 );
 
-if(keys["d"])
+}
+
+if(keys["d"]){
+
 player.position.add(
-right.clone().multiplyScalar(speed)
+right.clone()
+.multiplyScalar(
+speed
+)
 );
 
-if(keys[" "]&&grounded){
+}
+
+if(
+keys[" "]
+&&
+grounded
+){
 
 velY=0.35;
+
 grounded=false;
 
 }
@@ -508,85 +614,62 @@ velY-=0.02;
 
 player.position.y+=velY;
 
-if(player.position.y<=1){
+if(
+player.position.y<=1
+){
 
 player.position.y=1;
+
 velY=0;
+
 grounded=true;
 
 }
 
-for(let i=projectiles.length-1;i>=0;i--){
+camera.position.set(
 
-projectiles[i].mesh.position.add(
-projectiles[i].velocity
+player.position.x+
+Math.sin(yaw)*8,
+
+player.position.y+5,
+
+player.position.z+
+Math.cos(yaw)*8
+
 );
+
+camera.lookAt(
+player.position
+);
+
+document
+.getElementById("hp")
+.innerText=hp;
 
 if(
-projectiles[i].mesh.position.length()>300
+socket &&
+socket.readyState===1
 ){
 
-scene.remove(projectiles[i].mesh);
+socket.send(
+JSON.stringify({
 
-projectiles.splice(i,1);
+type:"update",
 
-}
+username:username,
 
-}
+x:player.position.x,
+y:player.position.y,
+z:player.position.z
 
-camera.position.set(
-player.position.x+Math.sin(yaw)*8,
-player.position.y+5,
-player.position.z+Math.cos(yaw)*8
+})
 );
 
-camera.lookAt(player.position);
-
-document.getElementById("hp").innerText=hp;
-
-document.getElementById("blueCD").innerText=
-cooldowns.blue>0
-?Math.ceil(cooldowns.blue/60)+"s"
-:"READY";
-
-document.getElementById("redCD").innerText=
-cooldowns.red>0
-?Math.ceil(cooldowns.red/60)+"s"
-:"READY";
-
-document.getElementById("purpleCD").innerText=
-cooldowns.purple>0
-?Math.ceil(cooldowns.purple/60)+"s"
-:"READY";
-
-document.getElementById("domainCD").innerText=
-cooldowns.domain>0
-?Math.ceil(cooldowns.domain/60)+"s"
-:"READY";
-
-
-
-if(socket && socket.readyState===1){
-
-    socket.send(JSON.stringify({
-
-        type:"update",
-
-        username:username,
-
-        x:player.position.x,
-        y:player.position.y,
-        z:player.position.z
-
-    }));
-
 }
 
+renderer.render(
+scene,
+camera
+);
 
-renderer.render(scene,camera);
 }
-
-</script>
-
-</body>
-</html>
