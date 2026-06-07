@@ -1,57 +1,447 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>JJS v0.2</title>
+
+<style>
+html,body{
+margin:0;
+height:100%;
+overflow:hidden;
+background:#111;
+font-family:Arial;
+}
+
+#menu,#characterMenu{
+position:absolute;
+inset:0;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+background:#111;
+color:white;
+z-index:10;
+}
+
+#characterMenu{
+display:none;
+}
+
+input,button,select{
+padding:10px;
+margin:5px;
+font-size:18px;
+}
+
+#hud{
+position:absolute;
+top:10px;
+left:10px;
+color:white;
+display:none;
+z-index:5;
+}
+
+#moves{
+position:absolute;
+bottom:10px;
+left:10px;
+color:white;
+display:none;
+z-index:5;
+}
+</style>
+</head>
+<body>
+
 <div id="menu">
-    <h1>JJS v0.2</h1>
+<h1>JJS v0.2</h1>
 
-    <input id="username" placeholder="Username">
+<input id="username" placeholder="Username">
 
-    <button id="playBtn">
-        Play
-    </button>
+<button id="playBtn">
+Play
+</button>
 </div>
 
-<div id="characterMenu" style="display:none">
-    <h2>Select Fighter</h2>
+<div id="characterMenu">
 
-    <select id="fighter">
-        <option>Azure Sorcerer</option>
-        <option>Shadow Summoner</option>
-        <option>Hammer Witch</option>
-    </select>
+<h2>Select Fighter</h2>
 
-    <button id="startBtn">
-        Enter City
-    </button>
+<select id="fighter">
+<option>Azure Sorcerer</option>
+<option>Shadow Summoner</option>
+<option>Hammer Witch</option>
+</select>
+
+<button id="startBtn">
+Enter City
+</button>
+
 </div>
+
+<div id="hud">
+<div id="playerName"></div>
+<div>HP: <span id="hp">100</span></div>
+<div>Character: <span id="charName"></span></div>
+</div>
+
+<div id="moves">
+Blue (1): <span id="blueCD">READY</span><br>
+Red (2): <span id="redCD">READY</span><br>
+Purple (3): <span id="purpleCD">READY</span><br>
+Domain (G): <span id="domainCD">READY</span>
+</div>
+
+<script type="module">
+
+import * as THREE from "https://unpkg.com/three@0.165.0/build/three.module.js";
+
 let username="";
 let fighter="";
+let hp=100;
+
+const keys={};
+
+let player;
+let camera;
+let scene;
+let renderer;
+
+let yaw=0;
+let velY=0;
+let grounded=true;
+
+const cooldowns={
+blue:0,
+red:0,
+purple:0,
+domain:0
+};
+
+const projectiles=[];
 
 document.getElementById("playBtn").onclick=()=>{
 
-    const name=
-    document.getElementById("username").value.trim();
+const name=
+document.getElementById("username").value.trim();
 
-    if(!name){
-        alert("Enter username");
-        return;
-    }
+if(!name){
+alert("Enter username");
+return;
+}
 
-    username=name;
+username=name;
 
-    document.getElementById("menu").style.display="none";
+document.getElementById("menu").style.display="none";
+document.getElementById("characterMenu").style.display="flex";
 
-    document.getElementById("characterMenu").style.display="flex";
 };
 
 document.getElementById("startBtn").onclick=()=>{
 
-    fighter=
-    document.getElementById("fighter").value;
+fighter=
+document.getElementById("fighter").value;
 
-    document.getElementById("characterMenu").style.display="none";
+document.getElementById("characterMenu").style.display="none";
 
-    startGame();
+document.getElementById("hud").style.display="block";
+document.getElementById("moves").style.display="block";
+
+document.getElementById("playerName").innerText=username;
+document.getElementById("charName").innerText=fighter;
+
+startGame();
+
 };
+
 function startGame(){
 
-    console.log("Starting game");
+scene=new THREE.Scene();
+scene.background=new THREE.Color(0x202020);
+
+camera=
+new THREE.PerspectiveCamera(
+75,
+window.innerWidth/window.innerHeight,
+0.1,
+1000
+);
+
+renderer=
+new THREE.WebGLRenderer({antialias:true});
+
+renderer.setSize(
+window.innerWidth,
+window.innerHeight
+);
+
+document.body.appendChild(renderer.domElement);
+
+scene.add(
+new THREE.AmbientLight(0xffffff,0.8)
+);
+
+const light=
+new THREE.DirectionalLight(0xffffff,2);
+
+light.position.set(20,30,20);
+
+scene.add(light);
+
+const ground=
+new THREE.Mesh(
+new THREE.PlaneGeometry(300,300),
+new THREE.MeshStandardMaterial({
+color:0x444444
+})
+);
+
+ground.rotation.x=-Math.PI/2;
+
+scene.add(ground);
+
+player=
+new THREE.Mesh(
+new THREE.BoxGeometry(1,2,1),
+new THREE.MeshStandardMaterial({
+color:0x00aaff
+})
+);
+
+player.position.y=1;
+
+scene.add(player);
+
+animate();
 
 }
+
+function createProjectile(color,size,speed){
+
+const orb=
+new THREE.Mesh(
+new THREE.SphereGeometry(size,16,16),
+new THREE.MeshStandardMaterial({
+color:color,
+emissive:color
+})
+);
+
+orb.position.copy(player.position);
+orb.position.y+=1.5;
+
+scene.add(orb);
+
+projectiles.push({
+mesh:orb,
+velocity:new THREE.Vector3(
+-Math.sin(yaw),
+0,
+-Math.cos(yaw)
+).multiplyScalar(speed)
+});
+
+}
+
+function createDomain(){
+
+const sphere=
+new THREE.Mesh(
+new THREE.SphereGeometry(25,24,24),
+new THREE.MeshBasicMaterial({
+color:0xaa00ff,
+wireframe:true
+})
+);
+
+sphere.position.copy(player.position);
+
+scene.add(sphere);
+
+setTimeout(()=>{
+scene.remove(sphere);
+},5000);
+
+}
+
+addEventListener("keydown",(e)=>{
+
+keys[e.key.toLowerCase()]=true;
+
+if(fighter!=="Azure Sorcerer") return;
+
+if(e.key==="1"&&cooldowns.blue<=0){
+createProjectile(0x0000ff,1,0.8);
+cooldowns.blue=180;
+}
+
+if(e.key==="2"&&cooldowns.red<=0){
+createProjectile(0xff0000,1.2,1.2);
+cooldowns.red=300;
+}
+
+if(e.key==="3"&&cooldowns.purple<=0){
+createProjectile(0xaa00ff,2,1.8);
+cooldowns.purple=600;
+}
+
+if(e.key.toLowerCase()==="g"&&cooldowns.domain<=0){
+createDomain();
+cooldowns.domain=1800;
+}
+
+});
+
+addEventListener("keyup",(e)=>{
+keys[e.key.toLowerCase()]=false;
+});
+
+addEventListener("click",()=>{
+
+if(document.pointerLockElement!==document.body){
+
+document.body.requestPointerLock();
+
+}
+
+});
+
+addEventListener("mousemove",(e)=>{
+
+if(document.pointerLockElement===document.body){
+
+yaw-=e.movementX*0.002;
+
+}
+
+});
+
+function animate(){
+
+requestAnimationFrame(animate);
+
+if(!player) return;
+
+if(cooldowns.blue>0) cooldowns.blue--;
+if(cooldowns.red>0) cooldowns.red--;
+if(cooldowns.purple>0) cooldowns.purple--;
+if(cooldowns.domain>0) cooldowns.domain--;
+
+let speed=0.15;
+
+if(keys["shift"]){
+speed=0.3;
+}
+
+const forward=
+new THREE.Vector3(
+Math.sin(yaw),
+0,
+Math.cos(yaw)
+);
+
+const right=
+new THREE.Vector3(
+Math.cos(yaw),
+0,
+-Math.sin(yaw)
+);
+
+if(keys["w"])
+player.position.add(
+forward.clone().multiplyScalar(-speed)
+);
+
+if(keys["s"])
+player.position.add(
+forward.clone().multiplyScalar(speed)
+);
+
+if(keys["a"])
+player.position.add(
+right.clone().multiplyScalar(-speed)
+);
+
+if(keys["d"])
+player.position.add(
+right.clone().multiplyScalar(speed)
+);
+
+if(keys[" "]&&grounded){
+
+velY=0.35;
+grounded=false;
+
+}
+
+velY-=0.02;
+
+player.position.y+=velY;
+
+if(player.position.y<=1){
+
+player.position.y=1;
+velY=0;
+grounded=true;
+
+}
+
+for(let i=projectiles.length-1;i>=0;i--){
+
+projectiles[i].mesh.position.add(
+projectiles[i].velocity
+);
+
+if(
+projectiles[i].mesh.position.length()>300
+){
+
+scene.remove(projectiles[i].mesh);
+
+projectiles.splice(i,1);
+
+}
+
+}
+
+camera.position.set(
+player.position.x+Math.sin(yaw)*8,
+player.position.y+5,
+player.position.z+Math.cos(yaw)*8
+);
+
+camera.lookAt(player.position);
+
+document.getElementById("hp").innerText=hp;
+
+document.getElementById("blueCD").innerText=
+cooldowns.blue>0
+?Math.ceil(cooldowns.blue/60)+"s"
+:"READY";
+
+document.getElementById("redCD").innerText=
+cooldowns.red>0
+?Math.ceil(cooldowns.red/60)+"s"
+:"READY";
+
+document.getElementById("purpleCD").innerText=
+cooldowns.purple>0
+?Math.ceil(cooldowns.purple/60)+"s"
+:"READY";
+
+document.getElementById("domainCD").innerText=
+cooldowns.domain>0
+?Math.ceil(cooldowns.domain/60)+"s"
+:"READY";
+
+renderer.render(scene,camera);
+
+}
+
+</script>
+
+</body>
+</html>
