@@ -267,9 +267,11 @@ scene.remove(sphere);
 
 }
 
-addEventListener("keydown",(e)=>{
+addEventListener("keydown",e=>{
 
-keys[e.key.toLowerCase()]=true;
+    console.log("KEY:", e.key);
+
+    keys[e.key.toLowerCase()] = true;
 
 if(fighter!=="Azure Sorcerer") return;
 
