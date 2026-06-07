@@ -46,6 +46,29 @@ wss.on("connection", (ws) => {
                 players[id].y = data.y;
                 players[id].z = data.z;
             }
+            if (data.type === "attack") {
+
+    const packet = JSON.stringify({
+        type: "attack",
+        attack: data.attack,
+        x: data.x,
+        y: data.y,
+        z: data.z,
+        yaw: data.yaw,
+        owner: id
+    });
+
+    wss.clients.forEach(client => {
+
+        if (
+            client.readyState ===
+            WebSocket.OPEN
+        ) {
+            client.send(packet);
+        }
+
+    });
+}
 
         } catch (err) {
             console.error(err);
