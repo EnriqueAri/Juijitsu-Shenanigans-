@@ -1018,53 +1018,97 @@ function connectSocket() {
       timeout: 6000,
       forceNew: true
     });
+
     socket.on('connect', function() {
-      console.log('Connected:', socket.id);
-      socket.emit('join', { name: plrName, char: selChar, pos: lp.pos, hp: lp.hp, maxHp: lp.maxHp });
+      console.log('Connected successfully with ID:', socket.id);
+      
+      // FIX: Break the complex Three.js vector object into simple x, y, z floats for the network
+      socket.emit('join', { 
+        name: plrName, 
+        char: selChar, 
+        pos: { x: lp.pos.x, y: lp.pos.y, z: lp.pos.z }, 
+        hp: lp.hp, 
+        maxHp: lp.maxHp 
+      });
     });
+
     socket.on('disconnect', function() { console.warn('Disconnected'); });
+    
     socket.on('currentPlayers', function(data) {
       Object.keys(data).forEach(function(id) { if (id !== socket.id) addRemote(id, data[id]); });
       updatePList();
     });
+    
     socket.on('playerJoined', function(pd) {
       if (pd.id === socket.id) return;
-      addRemote(pd.id, pd); addKill((pd.name||'???') + ' entered'); updatePList();
+      addRemote(pd.id, pd); 
+      addKill((pd.name||'???') + ' entered'); 
+      updatePList();
     });
+    
     socket.on('playerLeft', function(id) {
-      if (players[id]) { addKill((players[id].name||'???') + ' left'); scene.remove(players[id].mesh); delete players[id]; updatePList(); }
+      if (players[id]) { 
+        addKill((players[id].name||'???') + ' left'); 
+        scene.remove(players[id].mesh); 
+        delete players[id]; 
+        updatePList(); 
+      }
     });
+    
     socket.on('playerMoved', function(d) {
       var rp = players[d.id]; if (!rp) return;
-      rp.targetPos = new THREE.Vector3(d.pos.x, d.pos.y, d.pos.z);
+      if (d.pos) {
+        rp.targetPos = new THREE.Vector3(d.pos.x, d.pos.y, d.pos.z);
+      }
       rp.targetYaw = d.yaw || 0;
     });
+    
     socket.on('playerHit', function(d) {
       if (d.targetId !== socket.id) return;
       takeDamage(d.dmg, d.moveName, d.color);
     });
+    
     socket.on('playerDied', function(d) {
       var rp = players[d.id];
       if (rp) { addKill((rp.name||'???') + ' was eliminated'); rp.hp = 0; updatePList(); }
     });
+    
     socket.on('playerRespawned', function(d) {
       var rp = players[d.id]; if (!rp) return;
       rp.hp = d.hp || rp.maxHp;
       if (d.pos) rp.targetPos = new THREE.Vector3(d.pos.x, d.pos.y, d.pos.z);
       updatePList();
     });
+
   } catch(e) { console.warn('Socket error:', e); socket = null; }
 }
+
 
 function addRemote(id, pd) {
   if (players[id]) return;
   var ckey = (pd.char && CHARS[pd.char]) ? pd.char : 'gojo';
   var mesh = makeMesh(ckey, pd.name || '???');
-  if (pd.pos) { mesh.position.x = pd.pos.x || 0; mesh.position.y = pd.pos.y || 0; mesh.position.z = pd.pos.z || 0; }
+  
+  // FIX: Force a reliable parsing fallback so coordinates never break
+  var spawnX = (pd.pos && pd.pos.x !== undefined) ? pd.pos.x : 0;
+  var spawnY = (pd.pos && pd.pos.y !== undefined) ? pd.pos.y : 0;
+  var spawnZ = (pd.pos && pd.pos.z !== undefined) ? pd.pos.z : 0;
+  
+  mesh.position.set(spawnX, spawnY, spawnZ);
   scene.add(mesh);
-  players[id] = { id: id, mesh: mesh, char: ckey, name: pd.name || '???',
-    hp: pd.hp || CHARS[ckey].hp, maxHp: pd.maxHp || CHARS[ckey].hp,
-    targetPos: mesh.position.clone(), targetYaw: 0 };
+  
+  players[id] = { 
+    id: id, 
+    mesh: mesh, 
+    char: ckey, 
+    name: pd.name || '???',
+    hp: pd.hp || CHARS[ckey].hp, 
+    maxHp: pd.maxHp || CHARS[ckey].hp, 
+    targetPos: new THREE.Vector3(spawnX, spawnY, spawnZ), // FIX: Hardcode a real vector mapping
+    targetYaw: pd.yaw || 0 
+  };
+}
+
 }
 
 function netSend(type, data) {
@@ -1218,8 +1262,13 @@ function loop() {
   var now = Date.now();
   if (now - lastEmit > 55 && socket && socket.connected) {
     lastEmit = now;
-    socket.emit('move', { pos: lp.pos, yaw: yaw, hp: lp.hp });
-  }
+ socket.emit('move', { 
+  pos: { x: lp.pos.x, y: lp.pos.y, z: lp.pos.z }, 
+  yaw: yaw, 
+  hp: lp.hp 
+});
+}
+
 
   updateTimer(); updatePList();
   renderer.render(scene, camera);
