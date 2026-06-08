@@ -179,6 +179,53 @@ domain:0
 };
 
 const projectiles=[];
+   function createProjectile(color,size,speed){
+
+const orb=
+new THREE.Mesh(
+new THREE.SphereGeometry(size,16,16),
+new THREE.MeshStandardMaterial({
+color:color,
+emissive:color
+})
+);
+
+orb.position.copy(player.position);
+orb.position.y+=1.5;
+
+scene.add(orb);
+
+projectiles.push({
+mesh:orb,
+velocity:new THREE.Vector3(
+-Math.sin(yaw),
+0,
+-Math.cos(yaw)
+).multiplyScalar(speed)
+});
+
+}
+
+function createDomain(){
+
+const sphere=
+new THREE.Mesh(
+new THREE.SphereGeometry(25,24,24),
+new THREE.MeshBasicMaterial({
+color:0xaa00ff,
+wireframe:true
+})
+);
+
+sphere.position.copy(player.position);
+
+scene.add(sphere);
+
+setTimeout(()=>{
+scene.remove(sphere);
+},5000);
+
+}
 
 /* ==========================
    MULTIPLAYER
@@ -470,6 +517,35 @@ console.log("KEY PRESSED:", e.key);
 keys[
 e.key.toLowerCase()
 ]=true;
+   if(e.key==="1"){
+createProjectile(
+0x0000ff,
+1,
+0.8
+);
+}
+
+if(e.key==="2"){
+createProjectile(
+0xff0000,
+1.2,
+1.2
+);
+}
+
+if(e.key==="3"){
+createProjectile(
+0xaa00ff,
+2,
+1.8
+);
+}
+
+if(
+e.key.toLowerCase()==="g"
+){
+createDomain();
+}
 
 }
 );
@@ -624,6 +700,40 @@ player.position.y=1;
 velY=0;
 
 grounded=true;
+
+}
+   for(
+let i=projectiles.length-1;
+i>=0;
+i--
+){
+
+projectiles[i]
+.mesh
+.position
+.add(
+projectiles[i]
+.velocity
+);
+
+if(
+projectiles[i]
+.mesh
+.position
+.length()>300
+){
+
+scene.remove(
+projectiles[i]
+.mesh
+);
+
+projectiles.splice(
+i,
+1
+);
+
+}
 
 }
 
