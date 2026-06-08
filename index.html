@@ -1021,8 +1021,6 @@ function connectSocket() {
 
     socket.on('connect', function() {
       console.log('Connected successfully with ID:', socket.id);
-      
-      // FIX: Break the complex Three.js vector object into simple x, y, z floats for the network
       socket.emit('join', { 
         name: plrName, 
         char: selChar, 
@@ -1030,57 +1028,72 @@ function connectSocket() {
         hp: lp.hp, 
         maxHp: lp.maxHp 
       });
+    }); // <-- FIX: Added this closing bracket to safely seal the connect callback block
 
-    socket.on('disconnect', function() { console.warn('Disconnected'); });
-    
+    socket.on('disconnect', function() { 
+      console.warn('Disconnected'); 
+    });
+
     socket.on('currentPlayers', function(data) {
-      Object.keys(data).forEach(function(id) { if (id !== socket.id) addRemote(id, data[id]); });
+      Object.keys(data).forEach(function(id) { 
+        if (id !== socket.id) addRemote(id, data[id]); 
+      });
       updatePList();
     });
-    
+
     socket.on('playerJoined', function(pd) {
       if (pd.id === socket.id) return;
       addRemote(pd.id, pd); 
-      addKill((pd.name||'???') + ' entered'); 
+      addKill((pd.name || '???') + ' entered'); 
       updatePList();
     });
-    
+
     socket.on('playerLeft', function(id) {
       if (players[id]) { 
-        addKill((players[id].name||'???') + ' left'); 
+        addKill((players[id].name || '???') + ' left'); 
         scene.remove(players[id].mesh); 
         delete players[id]; 
         updatePList(); 
       }
     });
-    
+
     socket.on('playerMoved', function(d) {
-      var rp = players[d.id]; if (!rp) return;
+      var rp = players[d.id]; 
+      if (!rp) return;
       if (d.pos) {
         rp.targetPos = new THREE.Vector3(d.pos.x, d.pos.y, d.pos.z);
       }
       rp.targetYaw = d.yaw || 0;
     });
-    
+
     socket.on('playerHit', function(d) {
       if (d.targetId !== socket.id) return;
       takeDamage(d.dmg, d.moveName, d.color);
     });
-    
+
     socket.on('playerDied', function(d) {
       var rp = players[d.id];
-      if (rp) { addKill((rp.name||'???') + ' was eliminated'); rp.hp = 0; updatePList(); }
+      if (rp) { 
+        addKill((rp.name || '???') + ' was eliminated'); 
+        rp.hp = 0; 
+        updatePList(); 
+      }
     });
-    
+
     socket.on('playerRespawned', function(d) {
-      var rp = players[d.id]; if (!rp) return;
+      var rp = players[d.id]; 
+      if (!rp) return;
       rp.hp = d.hp || rp.maxHp;
       if (d.pos) rp.targetPos = new THREE.Vector3(d.pos.x, d.pos.y, d.pos.z);
       updatePList();
     });
 
-  } catch(e) { console.warn('Socket error:', e); socket = null; }
+  } catch(e) { 
+    console.warn('Socket error:', e); 
+    socket = null; 
+  }
 }
+
 
 
 function addRemote(id, pd) {
