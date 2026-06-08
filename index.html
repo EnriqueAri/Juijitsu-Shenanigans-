@@ -516,34 +516,39 @@ keys[
 e.key.toLowerCase()
 ]=true;
 
-   if(e.key==="1"){
-createProjectile(
-0x0000ff,
-1,
-0.8
-);
+if(e.key==="1" && cooldowns.blue<=0){
+
+createProjectile(0x0000ff,1,0.8);
+
+cooldowns.blue=180;
+
 }
 
-if(e.key==="2"){
-createProjectile(
-0xff0000,
-1.2,
-1.2
-);
+if(e.key==="2" && cooldowns.red<=0){
+
+createProjectile(0xff0000,1.2,1.2);
+
+cooldowns.red=300;
+
 }
 
-if(e.key==="3"){
-createProjectile(
-0xaa00ff,
-2,
-1.8
-);
+if(e.key==="3" && cooldowns.purple<=0){
+
+createProjectile(0xaa00ff,2,1.8);
+
+cooldowns.purple=600;
+
 }
 
 if(
 e.key.toLowerCase()==="g"
+&& cooldowns.domain<=0
 ){
+
 createDomain();
+
+cooldowns.domain=1800;
+
 }
 
 }
@@ -607,6 +612,10 @@ animate
 
 if(!player)
 return;
+   if(cooldowns.blue>0) cooldowns.blue--;
+if(cooldowns.red>0) cooldowns.red--;
+if(cooldowns.purple>0) cooldowns.purple--;
+if(cooldowns.domain>0) cooldowns.domain--;
 
 let speed=0.15;
 
@@ -755,6 +764,25 @@ player.position
 document
 .getElementById("hp")
 .innerText=hp;
+   document.getElementById("blueCD").innerText=
+cooldowns.blue>0
+?Math.ceil(cooldowns.blue/60)+"s"
+:"READY";
+
+document.getElementById("redCD").innerText=
+cooldowns.red>0
+?Math.ceil(cooldowns.red/60)+"s"
+:"READY";
+
+document.getElementById("purpleCD").innerText=
+cooldowns.purple>0
+?Math.ceil(cooldowns.purple/60)+"s"
+:"READY";
+
+document.getElementById("domainCD").innerText=
+cooldowns.domain>0
+?Math.ceil(cooldowns.domain/60)+"s"
+:"READY";
 
 if(
 socket &&
