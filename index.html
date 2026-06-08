@@ -723,6 +723,33 @@ projectiles[i]
 projectiles[i]
 .velocity
 );
+      for(const id in remotePlayers){
+
+const target =
+remotePlayers[id].mesh;
+
+const distance =
+projectiles[i].mesh.position.distanceTo(
+target.position
+);
+
+if(distance < 2){
+
+scene.remove(
+projectiles[i].mesh
+);
+
+projectiles.splice(i,1);
+
+console.log(
+"HIT PLAYER:",
+id
+);
+
+break;
+}
+
+}
 
 if(
 projectiles[i]
