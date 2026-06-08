@@ -461,15 +461,15 @@ animate();
 /* ==========================
    INPUT
 ========================== */
-
 addEventListener(
 "keydown",
 (e)=>{
 
+console.log("KEY PRESSED:", e.key);
+
 keys[
 e.key.toLowerCase()
 ]=true;
-   console.log("Pressed:", e.key, "Fighter:", fighter);
 
 }
 );
