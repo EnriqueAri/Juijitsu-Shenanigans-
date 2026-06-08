@@ -512,11 +512,11 @@ addEventListener(
 "keydown",
 (e)=>{
 
-console.log("KEY PRESSED:", e.key);
-
 keys[
 e.key.toLowerCase()
 ]=true;
+
+alert("KEYDOWN: " + e.key);
    if(e.key==="1"){
 createProjectile(
 0x0000ff,
