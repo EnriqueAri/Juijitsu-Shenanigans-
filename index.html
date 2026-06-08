@@ -732,11 +732,12 @@ const distance =
 projectiles[i].mesh.position.distanceTo(
 target.position
 );
+         console.log("Distance to player:", distance);
          if(distance < 10){
 console.log("Distance:", distance);
 }
 
-if(distance < 2){
+if(distance < 5){
 
 scene.remove(
 projectiles[i].mesh
