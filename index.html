@@ -1256,21 +1256,22 @@ function loop() {
   pitch = Math.max(-0.5, Math.min(0.5, pitch));
   camera.lookAt(lp.pos.x, lp.pos.y + 1.4, lp.pos.z);
 
-  // Network emit
-  var now = Date.now();
-  if (now - lastEmit > 55 && socket && socket.connected) {
-    lastEmit = now;
- socket.emit('move', { 
-  pos: { x: lp.pos.x, y: lp.pos.y, z: lp.pos.z }, 
-  yaw: yaw, 
-  hp: lp.hp 
-});
-}
-
-
-  updateTimer(); updatePList();
-  renderer.render(scene, camera);
-}
-</script>
-</body>
+    // Network emit
+    var now = Date.now();
+    if (now - lastEmit > 55 && socket && socket.connected) {
+      lastEmit = now;
+      socket.emit('move', { 
+        pos: { x: lp.pos.x, y: lp.pos.y, z: lp.pos.z }, 
+        yaw: yaw, 
+        hp: lp.hp 
+      });
+    }
+    updateTimer(); 
+    updatePList(); 
+    renderer.render(scene, camera); 
+  }
+} // <-- FIX: Restores the missing closing bracket for the global scope script block
+</script> 
+</body> 
 </html>
+
