@@ -732,6 +732,9 @@ const distance =
 projectiles[i].mesh.position.distanceTo(
 target.position
 );
+         if(distance < 10){
+console.log("Distance:", distance);
+}
 
 if(distance < 2){
 
