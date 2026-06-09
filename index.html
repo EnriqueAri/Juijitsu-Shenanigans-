@@ -455,7 +455,10 @@ function initGame(){
   camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,0.1,400);
   camera.position.set(0,6,10);
 
-  renderer=new THREE.WebGLRenderer({canvas:document.getElementById('canvas'),antialias:true,alpha:false});
+renderer = new THREE.WebGLRenderer({
+    antialias:false
+});
+  renderer.setPixelRatio(1);
   renderer.setPixelRatio(Math.min(devicePixelRatio,2));
   renderer.setSize(innerWidth,innerHeight);
   renderer.shadowMap.enabled=true;
@@ -1198,7 +1201,7 @@ function doMove(idx){
   if(m.t==='melee'){
     var dp=rng(m.d[0],m.d[1]);
     checkHit(ori.clone().addScaledVector(f,m.r*0.4),m.r*0.6,dp,m.c,m.n);
-    burst(ori.clone().addScaledVector(f,m.r*0.45),m.c,14,0.6);
+burst(ori.clone().addScaledVector(f,m.r*0.45),m.c,5,0.6);
     spawnRing(ori.clone().addScaledVector(f,m.r*0.4),m.c,0.4,m.r*0.6,0.3);
   } else if(m.t==='slash'){
     SFX.slash();
@@ -1212,7 +1215,7 @@ function doMove(idx){
     spawnAOE(ori,m.r*0.5,m.c,m.d,m.n);
   } else if(m.t==='heal'){
     lp.hp=Math.min(lp.maxHp,lp.hp+24); SFX.heal(); updateHP();
-    burst(ori,m.c,18,0.8); spawnRing(ori,m.c,0.3,2.5,0.6);
+    burst(ori,m.c,6,0.8);spawnRing(ori,m.c,0.3,2.5,0.6);
     showDmg('+24 HP',lp.mesh.position,'#00ff88');
   } else if(m.t==='buff'){
     burst(ori,m.c,16,0.7); spawnRing(ori,m.c,0.2,2.0,0.5);
@@ -1328,7 +1331,7 @@ function spawnAOE(center,radius,color,dmg,name){
   var sphere=new THREE.Mesh(new THREE.SphereGeometry(radius,14,10),
     new THREE.MeshBasicMaterial({color:color,transparent:true,opacity:0.12,side:THREE.DoubleSide}));
   sphere.position.copy(center); scene.add(sphere);
-  burst(center,color,26,radius*0.7);
+burst(center,color,8,radius*0.7);
   checkHit(center,radius,rng(dmg[0],dmg[1]),color,name);
   var t=0;
   (function tick(){
@@ -1545,7 +1548,7 @@ function die(){
   if(lp.isDead)return;
   lp.isDead=true; lp.hp=0; updateHP(); SFX.death();
   document.getElementById('dscreen').classList.add('show');
-  burst(lp.pos.clone(),CHARS[lp.char].accentHex,32,2.0);
+  burst(lp.pos.clone(),CHARS[lp.char].accentHex,10,2.0);
   respawnT=5;
   netEmit('playerDied',{pos:{x:lp.pos.x,y:lp.pos.y,z:lp.pos.z}});
 }
@@ -1704,14 +1707,29 @@ function loop(){
   camera.lookAt(lp.pos.x,lp.pos.y+1.4,lp.pos.z);
 
   // Network position emit (50ms throttle)
-  if(now-lastEmit>50&&socket&&socket.connected){
+if(now-lastEmit>100&&socket&&socket.connected){
     lastEmit=now;
     socket.emit('move',{pos:{x:lp.pos.x,y:lp.pos.y,z:lp.pos.z},yaw:yaw,hp:lp.hp});
   }
 
-  updateTimer(); updatePList(); updateMinimap();
-  renderer.render(scene,camera);
+updateTimer();
+
+if(!window.lastPlayerListUpdate)
+    window.lastPlayerListUpdate = 0;
+
+if(Date.now() - window.lastPlayerListUpdate > 1000){
+    window.lastPlayerListUpdate = Date.now();
+    updatePList();
 }
+
+if(!window.lastMapUpdate)
+    window.lastMapUpdate = 0;
+
+if(Date.now() - window.lastMapUpdate > 100){
+    window.lastMapUpdate = Date.now();
+    updateMinimap();
+}
+renderer.render(scene,camera);
 </script>
 </body>
 </html>
