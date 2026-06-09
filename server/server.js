@@ -1,101 +1,111 @@
 const http = require("http");
-const WebSocket = require("ws");
+const { Server } = require("socket.io");
 
 const PORT = process.env.PORT || 8080;
 
 const server = http.createServer((req, res) => {
-    res.writeHead(200, { "Content-Type": "text/plain" });
-    res.end("JJS Multiplayer Server Running");
+res.writeHead(200, { "Content-Type": "text/plain" });
+res.end("JJS Socket.IO Server Running");
 });
 
-const wss = new WebSocket.Server({ server });
+const io = new Server(server, {
+cors: {
+origin: "*",
+methods: ["GET", "POST"]
+}
+});
 
 const players = {};
 
-function broadcast(data) {
-    const msg = JSON.stringify(data);
+io.on("connection", (socket) => {
 
-    wss.clients.forEach(client => {
-        if (client.readyState === WebSocket.OPEN) {
-            client.send(msg);
-        }
-    });
-}
+```
+console.log("Player connected:", socket.id);
 
-wss.on("connection", (ws) => {
+socket.on("join", (data) => {
 
-    const id =
-        Math.random().toString(36).substring(2, 9);
-
-    players[id] = {
-        id,
-        username: "Player",
-        x: 0,
-        y: 1,
-        z: 0,
-        hp: 100
+    players[socket.id] = {
+        id: socket.id,
+        name: data.name || "Player",
+        char: data.char || "gojo",
+        pos: data.pos || { x: 0, y: 0, z: 0 },
+        hp: data.hp || 100,
+        maxHp: data.maxHp || 100,
+        yaw: 0
     };
 
-    ws.send(JSON.stringify({
-        type: "init",
-        id
-    }));
+    socket.emit("currentPlayers", players);
 
-    ws.on("message", (message) => {
+    socket.broadcast.emit("playerJoined", {
+        id: socket.id,
+        ...players[socket.id]
+    });
+});
 
-        try {
+socket.on("move", (data) => {
 
-            const data =
-                JSON.parse(message);
+    if (!players[socket.id]) return;
 
-            if (data.type === "update") {
+    players[socket.id].pos = data.pos || players[socket.id].pos;
+    players[socket.id].yaw = data.yaw || 0;
+    players[socket.id].hp = data.hp || players[socket.id].hp;
 
-                players[id].username =
-                    data.username;
-
-                players[id].x = data.x;
-                players[id].y = data.y;
-                players[id].z = data.z;
-            }
-
-            if (
-                data.type === "attack" ||
-                data.type === "domain" ||
-                data.type === "damage"
-            ) {
-
-                data.owner = id;
-
-                broadcast(data);
-            }
-
-        } catch (err) {
-            console.error(err);
-        }
-
+    socket.broadcast.emit("playerMoved", {
+        id: socket.id,
+        pos: players[socket.id].pos,
+        yaw: players[socket.id].yaw,
+        hp: players[socket.id].hp
     });
 
-    ws.on("close", () => {
+    if (data.respawned) {
+        socket.broadcast.emit("playerRespawned", {
+            id: socket.id,
+            pos: players[socket.id].pos,
+            hp: players[socket.id].hp
+        });
+    }
 
-        delete players[id];
+    if (data.isUlt) {
+        io.emit("ultUsed", {
+            id: socket.id
+        });
+    }
+});
 
+socket.on("hitPlayer", (data) => {
+
+    io.to(data.targetId).emit("playerHit", {
+        targetId: data.targetId,
+        dmg: data.dmg,
+        moveName: data.moveName,
+        color: data.color
     });
+});
+
+socket.on("playerDied", () => {
+
+    socket.broadcast.emit("playerDied", {
+        id: socket.id
+    });
+});
+
+socket.on("ping_jjs", (timestamp) => {
+
+    socket.emit("pong_jjs", timestamp);
+});
+
+socket.on("disconnect", () => {
+
+    console.log("Player disconnected:", socket.id);
+
+    delete players[socket.id];
+
+    io.emit("playerLeft", socket.id);
+});
+```
 
 });
 
-setInterval(() => {
-
-    broadcast({
-        type: "players",
-        players
-    });
-
-}, 50);
-
 server.listen(PORT, "0.0.0.0", () => {
-
-    console.log(
-        `Server running on port ${PORT}`
-    );
-
+console.log(`Server running on port ${PORT}`);
 });
