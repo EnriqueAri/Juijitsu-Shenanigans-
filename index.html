@@ -456,13 +456,15 @@ function initGame(){
   camera.position.set(0,6,10);
 
 renderer = new THREE.WebGLRenderer({
-    antialias:false
+    canvas: document.getElementById('canvas'),
+    antialias: false,
+    alpha: false
 });
-  renderer.setPixelRatio(1);
-  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+
+renderer.setPixelRatio(1);
+renderer.setSize(innerWidth, innerHeight);
   renderer.setSize(innerWidth,innerHeight);
-  renderer.shadowMap.enabled=true;
-  renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.shadowMap.enabled=false;
   renderer.outputEncoding=THREE.sRGBEncoding;
 
   clock=new THREE.Clock();
@@ -490,7 +492,7 @@ renderer = new THREE.WebGLRenderer({
 // CITY MAP  (much larger, full city)
 // ════════════════════════════════════════════════
 function buildCity(){
-  var MAP=200; // total map size
+  var MAP=120; // total map size
 
   // Ground
   var gnd=new THREE.Mesh(
@@ -506,13 +508,13 @@ function buildCity(){
   // Park (center-ish area)
   addPark(-20,0,30,30);
 
-  // Buildings in clusters
-  addSkyscrapers(50,0,15);     // east district
-  addSkyscrapers(-55,0,15);    // west district
-  addSkyscrapers(10,-55,12);   // south district
-  addSkyscrapers(-10,50,12);   // north district
-  addMidRiseBuildings(0,0,6);  // downtown surroundings
-  addWalls(MAP);               // boundary walls
+ // Buildings in clusters (optimized)
+addSkyscrapers(50,0,8);      // east district
+addSkyscrapers(-55,0,8);     // west district
+addSkyscrapers(10,-55,6);    // south district
+addSkyscrapers(-10,50,6);    // north district
+addMidRiseBuildings(0,0,3);  // downtown surroundings
+addWalls(MAP);               // boundary walls
 }
 
 function addRoads(MAP){
@@ -1714,21 +1716,11 @@ if(now-lastEmit>100&&socket&&socket.connected){
 
 updateTimer();
 
-if(!window.lastPlayerListUpdate)
-    window.lastPlayerListUpdate = 0;
+// updatePList();
+// updateMinimap();
 
-if(Date.now() - window.lastPlayerListUpdate > 1000){
-    window.lastPlayerListUpdate = Date.now();
-    updatePList();
-}
+renderer.render(scene,camera);
 
-if(!window.lastMapUpdate)
-    window.lastMapUpdate = 0;
-
-if(Date.now() - window.lastMapUpdate > 100){
-    window.lastMapUpdate = Date.now();
-    updateMinimap();
-}
 renderer.render(scene,camera);
 </script>
 </body>
