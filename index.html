@@ -830,7 +830,14 @@ function buildCity(SZ){
   }
   // Fountain
   var fm=new THREE.MeshStandardMaterial({color:0x223355,roughness:.4,metalness:.3});
-  scene.add(Object.assign(new THREE.Mesh(new THREE.CylinderGeometry(2.4,2.6,.45,16),fm),{position:{x:-8,y:.22,z:-5}}));
+ var fountainBase = new THREE.Mesh(
+    new THREE.CylinderGeometry(2.4,2.6,.45,16),
+    fm
+);
+
+fountainBase.position.set(-8, 0.22, -5);
+
+scene.add(fountainBase);
   var fp=new THREE.Mesh(new THREE.CylinderGeometry(.15,.2,1.4,8),fm);
   fp.position.set(-8,.7,-5); scene.add(fp);
 
