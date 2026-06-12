@@ -453,9 +453,9 @@ var pool={
   meshes:[], alive:[], vels:[], lives:[], maxLives:[],
   head:0,
   init:function(scene){
-    var geo=new THREE.SphereGeometry(.055,4,3);
+    var geo=new THREE.SphereGeometry(.075,5,4);
     for(var i=0;i<POOL_SIZE;i++){
-      var mat=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0});
+      var mat=new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:0,emissive:0xffffff,emissiveIntensity:.4,metalness:.2,roughness:.3});
       var m=new THREE.Mesh(geo,mat.clone());
       m.visible=false;
       scene.add(m);
@@ -486,8 +486,8 @@ var pool={
   burst:function(pos,color,count,spread){
     for(var i=0;i<count;i++){
       this.spawn(pos,color,
-        (Math.random()-.5)*spread*10,
-        .8+Math.random()*spread*6,
+        (Math.random()-.5)*spread*12,
+        1.2+Math.random()*spread*8,
         (Math.random()-.5)*spread*10,
         .4+Math.random()*.45
       );
@@ -518,11 +518,11 @@ var ppool={
   dmgs:[],names:[],colors:[],locals:[],
   init:function(scene){
     for(var i=0;i<PPOOL_SIZE;i++){
-      var g=new THREE.SphereGeometry(.22,8,6);
-      var m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:0xffffff}));
+      var g=new THREE.SphereGeometry(.24,10,8);
+      var m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:0xffffff,emissive:0xffffff,emissiveIntensity:.5,metalness:.3,roughness:.2}));
       m.visible=false; scene.add(m);
       // core glow
-      var core=new THREE.Mesh(new THREE.SphereGeometry(.09,6,5),new THREE.MeshBasicMaterial({color:0xffffff}));
+      var core=new THREE.Mesh(new THREE.SphereGeometry(.11,8,6),new THREE.MeshStandardMaterial({color:0xffffff,emissive:0xffffff,emissiveIntensity:.8}));
       m.add(core);
       this.meshes.push(m);
       this.alive.push(false);
@@ -537,7 +537,9 @@ var ppool={
         this.alive[i]=true;
         this.meshes[i].visible=true;
         this.meshes[i].material.color.set(color);
+        this.meshes[i].material.emissive.set(color);
         this.meshes[i].children[0].material.color.set(0xffffff);
+        this.meshes[i].children[0].material.emissive.set(color);
         this.meshes[i].position.copy(pos);
         this.dirs[i].copy(dir).normalize();
         this.speeds[i]=speed||28;
@@ -583,15 +585,21 @@ function initBeamPool(){
   for(var i=0;i<BPOOL_SIZE;i++){
     var pts=[new THREE.Vector3(),new THREE.Vector3()];
     var geo=new THREE.BufferGeometry().setFromPoints(pts);
-    var line=new THREE.Line(geo,new THREE.LineBasicMaterial({color:0xffffff}));
+    var line=new THREE.Line(geo,new THREE.LineBasicMaterial({color:0xffffff,linewidth:3}));
     line.visible=false; scene.add(line);
-    // Glow tube
+    // Glow tube - enhanced with more glow
     var tube=new THREE.Mesh(
-      new THREE.CylinderGeometry(.12,.12,1,8),
-      new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.28})
+      new THREE.CylinderGeometry(.18,.18,1,12),
+      new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.35,emissive:0xffffff,emissiveIntensity:.6,metalness:.3,roughness:.2})
     );
     tube.visible=false; scene.add(tube);
-    BPOOL.push({line:line,tube:tube,life:0,maxLife:.45,color:0xffffff});
+    // Outer glow cylinder
+    var glow=new THREE.Mesh(
+      new THREE.CylinderGeometry(.28,.28,1,12),
+      new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.12,side:THREE.BackSide})
+    );
+    glow.visible=false; scene.add(glow);
+    BPOOL.push({line:line,tube:tube,glow:glow,life:0,maxLife:.45,color:0xffffff});
   }
 }
 function fireBeam(ori,dir,color,dmg,name,len){
@@ -614,15 +622,22 @@ function fireBeam(ori,dir,color,dmg,name,len){
       var mid=ori.clone().addScaledVector(dir,len/2);
       b.tube.position.copy(mid);
       b.tube.material.color.set(color);
+      b.tube.material.emissive.set(color);
       b.tube.scale.set(1,len,1);
       var up=new THREE.Vector3(0,1,0);
       b.tube.quaternion.setFromUnitVectors(up,dir.clone().normalize());
       b.tube.visible=true;
+      // Glow halo
+      b.glow.position.copy(mid);
+      b.glow.material.color.set(color);
+      b.glow.scale.set(1,len,1);
+      b.glow.quaternion.copy(b.tube.quaternion);
+      b.glow.visible=true;
       // Hit check
       for(var d=2;d<=len;d+=3){
         checkHit(ori.clone().addScaledVector(dir,d),1.8,rng(dmg[0],dmg[1]),color,name);
       }
-      pool.burst(ori.clone().addScaledVector(dir,len/2),color,18,1.0);
+      pool.burst(ori.clone().addScaledVector(dir,len/2),color,22,1.2);
       return;
     }
   }
@@ -634,8 +649,10 @@ function updateBeams(dt){
       b.life-=dt;
       var a=b.life/b.maxLife;
       b.line.material.opacity=a;
-      b.tube.material.opacity=.28*a;
-      if(b.life<=0){b.line.visible=false;b.tube.visible=false;}
+      b.tube.material.opacity=.35*a;
+      b.tube.material.emissiveIntensity=.6*a;
+      b.glow.material.opacity=.12*a;
+      if(b.life<=0){b.line.visible=false;b.tube.visible=false;b.glow.visible=false;}
     }
   }
 }
@@ -646,16 +663,16 @@ var APOOL_SIZE=8;
 function initAOEPool(){
   for(var i=0;i<APOOL_SIZE;i++){
     var ring=new THREE.Mesh(
-      new THREE.RingGeometry(0,.5,32),
-      new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0,side:THREE.DoubleSide})
+      new THREE.RingGeometry(0,.5,48),
+      new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:0,side:THREE.DoubleSide,emissive:0xffffff,emissiveIntensity:.5})
     );
     ring.rotation.x=-Math.PI/2; ring.visible=false; scene.add(ring);
     var sphere=new THREE.Mesh(
-      new THREE.SphereGeometry(.5,12,9),
-      new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0,side:THREE.DoubleSide})
+      new THREE.SphereGeometry(.5,16,12),
+      new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:0,side:THREE.DoubleSide,emissive:0xffffff,emissiveIntensity:.35})
     );
     sphere.visible=false; scene.add(sphere);
-    APOOL.push({ring:ring,sphere:sphere,life:0,maxLife:.7,radius:5,startScale:0.01});
+    APOOL.push({ring:ring,sphere:sphere,life:0,maxLife:.8,radius:5,startScale:0.01});
   }
 }
 function fireAOE(center,radius,color,dmg,name){
@@ -664,12 +681,12 @@ function fireAOE(center,radius,color,dmg,name){
     if(a.life<=0){
       a.life=a.maxLife; a.radius=radius;
       a.ring.position.set(center.x,center.y+.1,center.z);
-      a.ring.material.color.set(color); a.ring.material.opacity=.55;
+      a.ring.material.color.set(color); a.ring.material.emissive.set(color); a.ring.material.opacity=.65;
       a.ring.scale.setScalar(.01); a.ring.visible=true;
       a.sphere.position.copy(center);
-      a.sphere.material.color.set(color); a.sphere.material.opacity=.15;
+      a.sphere.material.color.set(color); a.sphere.material.emissive.set(color); a.sphere.material.opacity=.2;
       a.sphere.scale.setScalar(.01); a.sphere.visible=true;
-      pool.burst(center,color,22,radius*.55);
+      pool.burst(center,color,28,radius*.65);
       checkHit(center,radius,rng(dmg[0],dmg[1]),color,name);
       return;
     }
@@ -681,11 +698,13 @@ function updateAOEs(dt){
     if(a.life>0){
       a.life-=dt;
       var t=1-(a.life/a.maxLife);
-      var sc=(a.radius*2)*(t*.9+.1)/.5;
+      var sc=(a.radius*2)*(t*.85+.15)/.5;
       a.ring.scale.setScalar(sc);
-      a.ring.material.opacity=.55*(1-t);
-      a.sphere.scale.setScalar(sc*.8);
-      a.sphere.material.opacity=.15*(1-t);
+      a.ring.material.opacity=.65*(1-t);
+      a.ring.material.emissiveIntensity=.5*(1-t);
+      a.sphere.scale.setScalar(sc*.75);
+      a.sphere.material.opacity=.2*(1-t);
+      a.sphere.material.emissiveIntensity=.35*(1-t);
       if(a.life<=0){a.ring.visible=false;a.sphere.visible=false;}
     }
   }
@@ -716,10 +735,12 @@ function init(){
   cam.position.set(0,6,10);
 
   ren=new THREE.WebGLRenderer({canvas:document.getElementById('c'),antialias:true});
-  ren.setPixelRatio(Math.min(devicePixelRatio,1.5)); // cap at 1.5 for perf
+  ren.setPixelRatio(Math.min(devicePixelRatio,1.5));
   ren.setSize(innerWidth,innerHeight);
   ren.shadowMap.enabled=true;
   ren.shadowMap.type=THREE.PCFSoftShadowMap;
+  ren.toneMapping=THREE.ACESFilmicToneMapping;
+  ren.toneMappingExposure=1.2;
 
   clk=new THREE.Clock();
   mStart=Date.now();
@@ -875,19 +896,19 @@ scene.add(fountainBase);
 }
 
 function buildLights(){
-  scene.add(new THREE.AmbientLight(0x090020,1.2));
+  scene.add(new THREE.AmbientLight(0x0a0025,1.4));
   // Main directional (moon-like)
-  var dir=new THREE.DirectionalLight(0x8888cc,.9);
+  var dir=new THREE.DirectionalLight(0x9999dd,1.0);
   dir.position.set(20,60,30); dir.castShadow=true;
-  dir.shadow.mapSize.width=1024; dir.shadow.mapSize.height=1024;
+  dir.shadow.mapSize.width=2048; dir.shadow.mapSize.height=2048;
   dir.shadow.camera.near=.5; dir.shadow.camera.far=180;
   dir.shadow.camera.left=-60; dir.shadow.camera.right=60;
   dir.shadow.camera.top=60; dir.shadow.camera.bottom=-60;
   scene.add(dir);
-  // Accent fills
-  var l1=new THREE.PointLight(0x00ccff,2,35); l1.position.set(-22,8,0); scene.add(l1);
-  var l2=new THREE.PointLight(0xff0066,2,35); l2.position.set(22,8,0);  scene.add(l2);
-  var l3=new THREE.PointLight(0x8800ff,1.5,28); l3.position.set(0,8,-22); scene.add(l3);
+  // Accent fills with more intensity
+  var l1=new THREE.PointLight(0x00ddff,2.5,40); l1.position.set(-22,8,0); scene.add(l1);
+  var l2=new THREE.PointLight(0xff0088,2.5,40); l2.position.set(22,8,0);  scene.add(l2);
+  var l3=new THREE.PointLight(0xaa22ff,2.0,35); l3.position.set(0,8,-22); scene.add(l3);
 }
 
 // ─────────────────────────────────────────────────────────
@@ -922,13 +943,13 @@ function makeMesh(ckey,nameStr){
   var d=CD[ckey];
   var G=new THREE.Group();
 
-  var mSkin=makeMat(d.skin,.72);
-  var mBody=makeMat(d.body,.62,.05);
-  var mHair=makeMat(d.hair,.55);
-  var mAcc =makeMat(d.acc,.35,.15,.18);
-  var mEye =new THREE.MeshBasicMaterial({color:d.eye});
+  var mSkin=makeMat(d.skin,.68,.02);
+  var mBody=makeMat(d.body,.58,.08);
+  var mHair=makeMat(d.hair,.48,.05,.12);
+  var mAcc =makeMat(d.acc,.32,.2,.22);
+  var mEye =new THREE.MeshStandardMaterial({color:d.eye,emissive:d.eye,emissiveIntensity:.6,metalness:.1,roughness:.15});
   var mW  =new THREE.MeshBasicMaterial({color:0xffffff});
-  var mDk =makeMat(0x111111,.85);
+  var mDk =makeMat(0x111111,.75,.02);
 
   function P(geo,mat,x,y,z,rx,rz){
     var m=new THREE.Mesh(geo,mat.clone?mat.clone():mat);
@@ -1006,13 +1027,18 @@ function makeMesh(ckey,nameStr){
   P(new THREE.BoxGeometry(.20,.03,.30),mDk,-0.19,-.66,.06);
   P(new THREE.BoxGeometry(.20,.03,.30),mDk, 0.19,-.66,.06);
 
-  // Aura
+  // Aura - more prominent and with emissive glow
   var aura=new THREE.Mesh(GEO.auraSphere,
-    new THREE.MeshBasicMaterial({color:d.acc,transparent:true,opacity:.05,side:THREE.BackSide}));
+    new THREE.MeshStandardMaterial({color:d.acc,transparent:true,opacity:.08,side:THREE.BackSide,emissive:d.acc,emissiveIntensity:.25}));
   aura.position.set(0,1.1,0); G.add(aura); G.userData.aura=aura;
 
-  // Player light (low intensity, small radius for perf)
-  var pl=new THREE.PointLight(d.acc,1.8,5.5);
+  // Inner aura glow layer
+  var innerAura=new THREE.Mesh(new THREE.SphereGeometry(.55,12,9),
+    new THREE.MeshBasicMaterial({color:d.acc,transparent:true,opacity:.04,side:THREE.FrontSide}));
+  innerAura.position.set(0,1.1,0); G.add(innerAura);
+
+  // Player light (enhanced with more intensity)
+  var pl=new THREE.PointLight(d.acc,2.2,6.5);
   pl.position.set(0,1.2,0); G.add(pl);
 
   // Name tag
@@ -1033,31 +1059,33 @@ function makeMesh(ckey,nameStr){
 function buildHair(G,k,mH,mA,mD,P,d){
   switch(k){
     case 'gojo':
-      // Fluffy white hair, no blindfold visible (Six Eyes)
-      P(new THREE.SphereGeometry(.40,12,9),mH,0,2.12,0);
-      P(new THREE.SphereGeometry(.25,9,7),mH,-0.30,2.24,0);
-      P(new THREE.SphereGeometry(.25,9,7),mH, 0.30,2.24,0);
-      P(new THREE.SphereGeometry(.22,9,7),mH,0,2.34,-.08);
-      P(new THREE.SphereGeometry(.17,8,6),mH,-0.34,2.12,-.12);
-      P(new THREE.SphereGeometry(.17,8,6),mH, 0.34,2.12,-.12);
-      // Blindfold
-      P(new THREE.BoxGeometry(.76,.11,.40),new THREE.MeshStandardMaterial({color:0x111111,roughness:.4}),0,1.88,.04);
+      // Fluffy white hair with more volume
+      P(new THREE.SphereGeometry(.42,14,10),mH,0,2.12,0);
+      P(new THREE.SphereGeometry(.28,10,8),mH,-0.32,2.26,0);
+      P(new THREE.SphereGeometry(.28,10,8),mH, 0.32,2.26,0);
+      P(new THREE.SphereGeometry(.24,10,8),mH,0,2.36,-.1);
+      P(new THREE.SphereGeometry(.19,9,7),mH,-0.36,2.12,-.14);
+      P(new THREE.SphereGeometry(.19,9,7),mH, 0.36,2.12,-.14);
+      P(new THREE.SphereGeometry(.16,8,6),mH,-0.25,2.38,.08);
+      P(new THREE.SphereGeometry(.16,8,6),mH, 0.25,2.38,.08);
+      // Blindfold - more stylized
+      P(new THREE.BoxGeometry(.78,.12,.42),new THREE.MeshStandardMaterial({color:0x0a0a0a,roughness:.35,metalness:.1}),0,1.88,.04);
       break;
     case 'sukuna':
-      var sm=new THREE.MeshStandardMaterial({color:0x886688,roughness:.55});
-      P(new THREE.BoxGeometry(.74,.16,.70),sm,0,2.13,0);
-      P(new THREE.BoxGeometry(.48,.26,.50),sm,0,2.25,-.05);
-      P(new THREE.BoxGeometry(.15,.22,.58),sm,-0.42,2.05,0);
-      P(new THREE.BoxGeometry(.15,.22,.58),sm, 0.42,2.05,0);
-      // Tattoos
-      var tm=new THREE.MeshBasicMaterial({color:0x770000});
-      P(new THREE.BoxGeometry(.08,.01,.02),tm,-0.18,1.90,.31,-.3);
-      P(new THREE.BoxGeometry(.08,.01,.02),tm, 0.18,1.90,.31,-.3);
-      P(new THREE.BoxGeometry(.01,.13,.02),tm,-0.18,1.84,.31);
-      P(new THREE.BoxGeometry(.01,.13,.02),tm, 0.18,1.84,.31);
-      // Extra eye hints (4 eyes)
-      P(new THREE.SphereGeometry(.034,6,5),new THREE.MeshBasicMaterial({color:0xff0000}),-0.18,1.80,.32);
-      P(new THREE.SphereGeometry(.034,6,5),new THREE.MeshBasicMaterial({color:0xff0000}), 0.18,1.80,.32);
+      var sm=new THREE.MeshStandardMaterial({color:0x7a5a7a,roughness:.48,metalness:.05});
+      P(new THREE.BoxGeometry(.76,.18,.72),sm,0,2.13,0);
+      P(new THREE.BoxGeometry(.50,.28,.52),sm,0,2.27,-.06);
+      P(new THREE.BoxGeometry(.16,.24,.60),sm,-0.44,2.05,0);
+      P(new THREE.BoxGeometry(.16,.24,.60),sm, 0.44,2.05,0);
+      // Tattoos - more visible
+      var tm=new THREE.MeshStandardMaterial({color:0x8b0000,roughness:.6,metalness:.1});
+      P(new THREE.BoxGeometry(.10,.015,.025),tm,-0.20,1.90,.32,-.3);
+      P(new THREE.BoxGeometry(.10,.015,.025),tm, 0.20,1.90,.32,-.3);
+      P(new THREE.BoxGeometry(.015,.15,.025),tm,-0.20,1.84,.32);
+      P(new THREE.BoxGeometry(.015,.15,.025),tm, 0.20,1.84,.32);
+      // Extra eye hints (4 eyes) - enhanced glow
+      P(new THREE.SphereGeometry(.038,8,6),new THREE.MeshStandardMaterial({color:0xff3333,emissive:0xff3333,emissiveIntensity:.7}),-0.20,1.80,.33);
+      P(new THREE.SphereGeometry(.038,8,6),new THREE.MeshStandardMaterial({color:0xff3333,emissive:0xff3333,emissiveIntensity:.7}), 0.20,1.80,.33);
       break;
     case 'nanami':
       P(new THREE.BoxGeometry(.72,.12,.68),mH,0,2.11,0);
@@ -1275,12 +1303,12 @@ function doBlock(){
 }
 function doPunch(){
   if(lp.dead)return;
-  SFX.punch(); recoil(.04,.012);
+  SFX.punch(); recoil(.05,.015);
   var hp=lp.pos.clone().addScaledVector(fw(),2.2); hp.y+=1.2;
-  pool.burst(hp,0xffffff,5,.22);
+  pool.burst(hp,0xffffff,8,.28);
   checkHit(hp,1.9,rng(12,18),0xffffff,'Punch');
   lp.combo++; lp.comboT=1.5;
-  gainCE(.8); // small CE gain per punch
+  gainCE(.8);
   if(lp.combo>=3)showCombo(lp.combo,'#ff8800');
 }
 
@@ -1297,7 +1325,7 @@ function doMove(idx){
   var f=fw();
 
   if(m.t==='melee'){
-    pool.burst(ori.clone().addScaledVector(f,m.r*.45),m.c,12,.55);
+    pool.burst(ori.clone().addScaledVector(f,m.r*.45),m.c,16,.65);
     checkHit(ori.clone().addScaledVector(f,m.r*.4),m.r*.58,rng(m.d[0],m.d[1]),m.c,m.n);
   } else if(m.t==='slash'){
     SFX.slash();
@@ -1310,7 +1338,7 @@ function doMove(idx){
   } else if(m.t==='aoe'){
     fireAOE(ori,m.r*.5,m.c,m.d,m.n);
   } else if(m.t==='buff'){
-    pool.burst(ori,m.c,14,.65);
+    pool.burst(ori,m.c,18,.75);
     showDmg('POWER UP!',lp.mesh.position,'#'+hexStr(m.c));
   }
   netSend('move',{pos:v3(lp.pos),yaw:yaw,hp:lp.hp,mi:idx,char:lp.char});
@@ -1425,12 +1453,13 @@ function spawnSlash(ori,dir,color,dmg,name,range){
       ).normalize();
       var pts=[ori.clone(),ori.clone().addScaledVector(dv,range*.7)];
       var ln=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
-        new THREE.LineBasicMaterial({color:color}));
+        new THREE.LineBasicMaterial({color:color,linewidth:2}));
+      ln.userData.color=color;
       scene.add(ln);
-      pool.burst(pts[1],color,5,.3);
+      pool.burst(pts[1],color,8,.4);
       if(i===1)checkHit(ori.clone().addScaledVector(dv,range*.35),range*.5,rng(dmg[0],dmg[1]),color,name);
-      setTimeout(function(){scene.remove(ln);},220);
-    },i*55);})(i);
+      setTimeout(function(){scene.remove(ln);},240);
+    },i*45);})(i);
   }
 }
 
@@ -1486,11 +1515,11 @@ function takeDmg(dmg,name,color){
   if(lp.dead)return;
   if(lp.blocking)dmg=Math.floor(dmg*.12);
   SFX.hit(); lp.hp=Math.max(0,lp.hp-dmg); updateHP();
-  document.getElementById('hv').style.opacity='.6';
-  setTimeout(function(){document.getElementById('hv').style.opacity='0';},170);
-  recoil(.10,.055); cShk=.14; cShkD=.35;
-  showDmg(''+dmg,lp.mesh.position,'#ff2222');
-  gainCE(2); // getting hit gives some CE
+  document.getElementById('hv').style.opacity='.75';
+  setTimeout(function(){document.getElementById('hv').style.opacity='0';},200);
+  recoil(.12,.065); cShk=.18; cShkD=.40;
+  showDmg(''+dmg,lp.mesh.position,'#ff3333');
+  gainCE(2);
   if(lp.hp<=0)die();
 }
 
@@ -1515,6 +1544,9 @@ function showDmg(text,wp,color){
   var x=(v.x*.5+.5)*innerWidth, y=(-v.y*.5+.5)*innerHeight;
   var el=document.createElement('div');
   el.className='dn'; el.textContent=text; el.style.color=color||'#fff';
+  el.style.textShadow='0 0 10px '+color+'40,0 2px 4px #000000';
+  el.style.fontWeight='800';
+  el.style.fontSize='1.35rem';
   el.style.left=x+'px'; el.style.top=y+'px';
   document.body.appendChild(el);
   setTimeout(function(){el.remove();},1050);
@@ -1522,6 +1554,7 @@ function showDmg(text,wp,color){
 function showCombo(n,c){
   var ct=document.getElementById('combo');
   ct.textContent=n+'x COMBO!'; ct.style.color=c||'#ff8800';
+  ct.style.textShadow='0 0 20px '+c+'80,0 0 40px '+c+'40';
   ct.classList.add('show');
   setTimeout(function(){ct.classList.remove('show');},900);
 }
